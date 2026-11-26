@@ -41,6 +41,7 @@ from gns3server.compute.docker.iol_docker_vm import IOLDockerVM
 from gns3server.compute.docker.vendor_docker_vm import VendorDockerVM
 from gns3server.config import Config
 from gns3server.utils import parse_version
+from gns3server.utils.docker_node_type import docker_node_kind
 
 log = logging.getLogger(__name__)
 
@@ -77,17 +78,8 @@ class Docker(DockerImagesMixin, BaseManager):
         markers. Like console_type, the environment is fixed at node creation
         time: toggling a marker via PUT takes effect after a project reload.
         """
-        if kwargs.get("console_type") == "docker_exec":
-            return VendorDockerVM
-        environment = kwargs.get("environment") or ""
-        for line in environment.splitlines():
-            line = line.strip().rstrip(",")
-            if line.startswith("GNS3_IOL_RUNNER="):
-                return IOLDockerVM
-            if line.startswith("GNS3_UNIX_SOCKET_NIO="):
-                # Generic capability, usable without the IOL specifics.
-                return VendorDockerVM
-        return DockerVM
+        kind = docker_node_kind(kwargs.get("console_type"), kwargs.get("environment"))
+        return {"iol": IOLDockerVM, "vendor": VendorDockerVM, "standard": DockerVM}[kind]
 
     async def create_node(self, name, project_id, node_id, *args, **kwargs):
         self._NODE_CLASS = self._select_node_class(**kwargs)

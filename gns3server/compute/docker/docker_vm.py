@@ -423,7 +423,8 @@ class DockerVM(DockerKernelDatapathMixin, BaseNode):
         :returns: Dictionary information about the container image
         """
 
-        result = await self.manager.query("GET", f"images/{self._image}/json")
+        image = getattr(self, "_startup_restore_image", None) or self._image
+        result = await self.manager.query("GET", f"images/{image}/json")
         return result
 
     def _persistent_volume_list(self, image_info, include_network_config=True):
@@ -641,7 +642,7 @@ class DockerVM(DockerKernelDatapathMixin, BaseNode):
 
         params = {
             "Hostname": self._name,
-            "Image": self._image,
+            "Image": getattr(self, "_startup_restore_image", None) or self._image,
             "NetworkDisabled": True,
             "Tty": True,
             "OpenStdin": True,

@@ -39,6 +39,7 @@ import gns3server.utils.asyncio
 import gns3server.utils.images
 from gns3server.compute.ubridge.tc_probe import probe_iol_tap_support
 from gns3server.compute.ubridge.ubridge_error import UbridgeError
+from gns3server.services.configurations.shared import preparation
 from gns3server.services.configurations.shared.node_lease import lifecycle_action, while_current_process
 from gns3server.services.configurations.shared.startup_journal import (
     mark_started,
@@ -490,7 +491,8 @@ class IOUVM(KernelDatapathMixin, BaseNode):
         if self.startup_config_file:
             content = self.startup_config_content
             content = re.sub(r"hostname .+$", "hostname " + new_name, content, flags=re.MULTILINE)
-            self.startup_config_content = content
+            with preparation.keeping_ownership(self):
+                self.startup_config_content = content
 
         super(IOUVM, IOUVM).name.__set__(self, new_name)
 

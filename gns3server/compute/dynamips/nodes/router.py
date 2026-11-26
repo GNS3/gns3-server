@@ -32,6 +32,7 @@ import time
 
 log = logging.getLogger(__name__)
 
+from gns3server.services.configurations.shared import preparation
 from gns3server.services.configurations.shared.node_lease import lifecycle_action
 from gns3server.services.configurations.shared.startup_journal import (
     journal_path,
@@ -1846,27 +1847,28 @@ class Router(KernelDatapathMixin, BaseNode):
 
         await self._hypervisor.send(f'vm rename "{self._name}" "{new_name}"')
 
-        # change the hostname in the startup-config
-        if os.path.isfile(self.startup_config_path):
-            try:
-                with open(self.startup_config_path, "r+", encoding="utf-8", errors="replace") as f:
-                    old_config = f.read()
-                    new_config = re.sub(r"hostname .+$", "hostname " + new_name, old_config, flags=re.MULTILINE)
-                    f.seek(0)
-                    f.write(new_config)
-            except OSError as e:
-                raise DynamipsError(f"Could not amend the configuration {self.startup_config_path}: {e}")
+        with preparation.keeping_ownership(self):
+            # change the hostname in the startup-config
+            if os.path.isfile(self.startup_config_path):
+                try:
+                    with open(self.startup_config_path, "r+", encoding="utf-8", errors="replace") as f:
+                        old_config = f.read()
+                        new_config = re.sub(r"hostname .+$", "hostname " + new_name, old_config, flags=re.MULTILINE)
+                        f.seek(0)
+                        f.write(new_config)
+                except OSError as e:
+                    raise DynamipsError(f"Could not amend the configuration {self.startup_config_path}: {e}")
 
-        # change the hostname in the private-config
-        if os.path.isfile(self.private_config_path):
-            try:
-                with open(self.private_config_path, "r+", encoding="utf-8", errors="replace") as f:
-                    old_config = f.read()
-                    new_config = old_config.replace(self.name, new_name)
-                    f.seek(0)
-                    f.write(new_config)
-            except OSError as e:
-                raise DynamipsError(f"Could not amend the configuration {self.private_config_path}: {e}")
+            # change the hostname in the private-config
+            if os.path.isfile(self.private_config_path):
+                try:
+                    with open(self.private_config_path, "r+", encoding="utf-8", errors="replace") as f:
+                        old_config = f.read()
+                        new_config = old_config.replace(self.name, new_name)
+                        f.seek(0)
+                        f.write(new_config)
+                except OSError as e:
+                    raise DynamipsError(f"Could not amend the configuration {self.private_config_path}: {e}")
 
         log.debug(f'Router "{self._name}" [{self._id}]: renamed to "{new_name}"')
         self._name = new_name

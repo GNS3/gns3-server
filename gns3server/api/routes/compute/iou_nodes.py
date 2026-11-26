@@ -27,8 +27,10 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 
 from gns3server import schemas
+from gns3server.compute.configurations import ConfigurationService
 from gns3server.compute.iou import IOU
 from gns3server.compute.iou.iou_vm import IOUVM
+from gns3server.schemas.configurations import Engine
 
 from .dependencies.authentication import compute_authentication, ws_compute_authentication
 
@@ -83,7 +85,10 @@ async def create_iou_node(project_id: UUID, node_data: schemas.IOUCreate) -> sch
                 continue
             if data.get("use_default_iou_values") and (name == "ram" or name == "nvram"):
                 continue
-            setattr(vm, name, value)
+            if name in ("startup_config_content", "private_config_content"):
+                await ConfigurationService(vm, Engine.iou).import_native({name: value})
+            else:
+                setattr(vm, name, value)
     return vm.asdict()
 
 
@@ -105,7 +110,10 @@ async def update_iou_node(node_data: schemas.IOUUpdate, node: IOUVM = Depends(de
     data = jsonable_encoder(node_data, exclude_unset=True)
     for name, value in data.items():
         if hasattr(node, name) and getattr(node, name) != value:
-            setattr(node, name, value)
+            if name in ("startup_config_content", "private_config_content"):
+                await ConfigurationService(node, Engine.iou).import_native({name: value})
+            else:
+                setattr(node, name, value)
 
     if node.use_default_iou_values:
         # update the default IOU values in case the image or use_default_iou_values have changed

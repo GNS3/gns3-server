@@ -27,9 +27,12 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 
 from gns3server import schemas
+from gns3server.compute.configurations import ConfigurationService
 from gns3server.compute.docker import Docker
 from gns3server.compute.docker.docker_error import DockerError
 from gns3server.compute.docker.docker_vm import DockerVM
+from gns3server.schemas.configurations import Engine
+from gns3server.services.configurations.shared.node_lease import node_lease
 
 from .dependencies.authentication import compute_authentication, ws_compute_authentication
 
@@ -113,7 +116,10 @@ async def create_docker_node(project_id: UUID, node_create: schemas.DockerCreate
     for name, value in node_data.items():
         if name != "node_id":
             if hasattr(container, name) and getattr(container, name) != value:
-                setattr(container, name, value)
+                if name == "startup_config_content":
+                    await ConfigurationService(container, Engine.docker).import_native({name: value})
+                else:
+                    setattr(container, name, value)
 
     return container.asdict()
 
@@ -133,6 +139,11 @@ async def update_docker_node(node_update: schemas.DockerUpdate, node: DockerVM =
     Update a Docker node.
     """
 
+    async with node_lease(node):
+        return await _update_docker_node(node_update, node)
+
+
+async def _update_docker_node(node_update, node):
     props = [
         "name",
         "console",
@@ -174,7 +185,10 @@ async def update_docker_node(node_update: schemas.DockerUpdate, node: DockerVM =
         )
 
     for prop in changed_props:
-        setattr(node, prop, node_data[prop])
+        if prop == "startup_config_content":
+            await ConfigurationService(node, Engine.docker).import_native({prop: node_data[prop]})
+        else:
+            setattr(node, prop, node_data[prop])
     # We don't call container.update for nothing because it will restart the container
     if changed_props:
         await node.update()

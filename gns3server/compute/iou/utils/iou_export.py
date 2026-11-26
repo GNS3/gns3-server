@@ -43,13 +43,18 @@ import struct
 # LZC uses the LZW compression algorithm with a variable dictionary size
 # For LZW see https://en.wikipedia.org/wiki/Lempel–Ziv–Welch
 # Performance: about 1 MByte/sec, 15-50 times slower than C implementation
-def uncompress_LZC(data):
+def uncompress_LZC(data, max_output_bytes=None):
     LZC_NUM_BITS_MIN = 9
     LZC_NUM_BITS_MAX = 16
 
     in_data = bytearray(data)
     in_len = len(in_data)
     out_data = bytearray()
+
+    def extend_output(chunk):
+        if max_output_bytes is not None and len(out_data) + len(chunk) > max_output_bytes:
+            raise ValueError("configuration exceeds output limit")
+        out_data.extend(chunk)
 
     if in_len == 0:
         return out_data
@@ -110,12 +115,12 @@ def uncompress_LZC(data):
             if symbol >= 256:
                 raise ValueError("invalid data")
             prev = symbol
-            out_data.extend(comp_dict[symbol])
+            extend_output(comp_dict[symbol])
             continue
 
         # dictionary full
         if head >= num_items:
-            out_data.extend(comp_dict[symbol])
+            extend_output(comp_dict[symbol])
             continue
 
         # update compression dictionary
@@ -128,7 +133,7 @@ def uncompress_LZC(data):
         prev = symbol
 
         # output symbol
-        out_data.extend(comp_dict[symbol])
+        extend_output(comp_dict[symbol])
 
         # update head, check for num_bits change
         head += 1
@@ -142,7 +147,7 @@ def uncompress_LZC(data):
 
 # export IOU NVRAM
 # NVRAM format: https://github.com/ehlers/IOUtools/blob/master/NVRAM.md
-def nvram_export(nvram):
+def nvram_export(nvram, max_config_bytes=None):
     nvram = bytearray(nvram)
 
     offset = 0
@@ -154,6 +159,8 @@ def nvram_export(nvram):
         offset += 36
         if magic != 0xABCD:
             raise ValueError("no startup config")
+        if max_config_bytes is not None and (data_format not in (1, 2) or length > max_config_bytes):
+            raise ValueError("invalid format or configuration exceeds output limit")
         if len(nvram) < offset + length:
             raise ValueError("invalid length")
         startup = nvram[offset : offset + length]
@@ -163,7 +170,7 @@ def nvram_export(nvram):
     # uncompress startup config
     if data_format == 2:
         try:
-            startup = uncompress_LZC(startup)
+            startup = uncompress_LZC(startup, max_output_bytes=max_config_bytes)
         except ValueError as err:
             raise ValueError("uncompress startup: " + str(err))
 
@@ -181,6 +188,8 @@ def nvram_export(nvram):
         (magic, data_format, _, _, length) = struct.unpack_from(">HHIII", nvram, offset=offset)
         offset += 16
         if magic == 0xFEDC and data_format == 1:
+            if max_config_bytes is not None and length > max_config_bytes:
+                raise ValueError("configuration exceeds output limit")
             if len(nvram) < offset + length:
                 raise ValueError("invalid length")
             private = nvram[offset : offset + length]

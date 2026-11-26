@@ -1,10 +1,15 @@
 """Replaying a saved text through the console: login, commands, errors, save and the recovery that follows."""
 
+import asyncio
 from types import SimpleNamespace
+from unittest.mock import AsyncMock
 
+import asyncssh
 import pytest
+import telnetlib3
 
 from gns3server.schemas.configurations import ConsoleCredentials
+from gns3server.services.configurations.console import session_runner as console
 from gns3server.services.configurations.console.replay import apply_line, cli_commands
 from gns3server.services.configurations.console.session_runner import run_console_session
 from gns3server.services.configurations.shared.errors import CaptureFailure, ConfigurationError
@@ -210,6 +215,86 @@ async def test_nexus_replay_failure_reports_command_index_without_configuration_
     }
     assert "unsupported-feature" not in str(caught.value)
     assert b"copy running-config startup-config" not in commands
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("driver", ["cisco_ios_telnet", "cisco_nxos"])
+async def test_startup_waits_passively_and_preserves_interactive_console_during_boot(appliance, monkeypatch, driver):
+    from gns3server.compute.configurations import ConfigurationService
+    from gns3server.schemas.configurations import ApplyOptions, Engine
+
+    node, transcript = appliance
+    proxy = node._configuration_console_proxy
+    proxy._console_readiness.clear()
+
+    def respond(line):
+        return _restore_response(line, transcript)
+
+    commands = serve_console(transcript, respond)
+    spawn = AsyncMock(wraps=console._spawn_worker)
+    monkeypatch.setattr(console, "_spawn_worker", spawn)
+    # This test owns the boot-time console interaction; the read-back that
+    # confirms a startup restore is covered by test_configuration_verify.py.
+    monkeypatch.setattr(ConfigurationService, "_verify_console_restore", AsyncMock())
+    task = asyncio.create_task(
+        ConfigurationService(node, Engine.qemu).apply(
+            ApplyOptions(device_type=driver, content="hostname restored\n", wait_ready=True)
+        )
+    )
+    connection = client = None
+    connected = asyncio.Event()
+
+    async def on_connected():
+        connected.set()
+
+    if node.console_type == "telnet":
+        proxy.client_connected_hook = on_connected
+    try:
+        transcript.reader.feed_data(b"rommon>")
+        await asyncio.sleep(1.1)
+        assert not task.done()
+        spawn.assert_not_called()
+        assert proxy._exclusive_console is None
+        assert not commands
+        if node.console_type == "ssh":
+            connection = await asyncssh.connect(
+                "127.0.0.1", port=proxy._server.get_port(), known_hosts=None, encoding=None
+            )
+            client = await connection.create_process(encoding=None)
+            reader = client.stdout
+            connected.set()
+        else:
+            reader, client = await telnetlib3.open_connection(
+                "127.0.0.1", proxy._server.sockets[0].getsockname()[1], encoding=False
+            )
+
+        await asyncio.wait_for(connected.wait(), 2)
+        transcript.reader.feed_data(b"Booting Nexus\r\n")
+        assert b"Booting Nexus" in await asyncio.wait_for(reader.readuntil(b"\n"), 2)
+        transcript.reader.feed_data(b"switch#")
+        await asyncio.sleep(0.1)
+        assert not task.done()
+        spawn.assert_not_called()  # An interactive user still owns the serial stream.
+        assert proxy._exclusive_console is None
+        client.close()
+        if connection:
+            connection.close()
+            await connection.wait_closed()
+        await asyncio.wait_for(task, 12)
+        spawn.assert_awaited_once()
+        assert b"hostname restored" in commands
+        assert (b"write memory" if driver == "cisco_ios_telnet" else b"copy running-config startup-config") in commands
+        assert proxy._exclusive_console is None
+        assert not proxy._console_readiness.tail  # Private configuration output is not cached.
+    finally:
+        if client:
+            client.close()
+        if connection:
+            connection.close()
+            await connection.wait_closed()
+        if not task.done():
+            task.cancel()
+        await asyncio.gather(task, return_exceptions=True)
 
 
 @pytest.mark.asyncio

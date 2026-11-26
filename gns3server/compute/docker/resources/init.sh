@@ -63,6 +63,14 @@ do
     done < "$i/.gns3_perms"
 done
 
+# A startup configuration for FRR is staged by the server and installed once, here: after the first
+# start has seeded /etc/frr from the image, which would otherwise overwrite it.
+if [ -f /etc/frr/.gns3-startup.conf ]; then
+    cat /etc/frr/.gns3-startup.conf > /etc/frr/frr.conf && rm -f /etc/frr/.gns3-startup.conf
+    chown frr:frr /etc/frr/frr.conf 2>/dev/null
+    chmod 640 /etc/frr/frr.conf
+fi
+
 
 # /etc/hosts
 [ -s /etc/hosts ] || cat > /etc/hosts << __EOF__

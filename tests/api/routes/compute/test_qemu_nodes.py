@@ -19,7 +19,7 @@ import os
 import shutil
 import stat
 import uuid
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 import pytest_asyncio
@@ -394,6 +394,76 @@ class TestQemuNodesRoutes:
         finally:
             release.set()
             await task
+
+    async def test_explicit_console_commands_keep_settings_exclusive_until_finished(
+        self, app, compute_client, qemu_vm, monkeypatch
+    ):
+        from gns3server.compute.qemu import Qemu
+
+        vm = Qemu.instance().get_node(qemu_vm["node_id"], project_id=qemu_vm["project_id"])
+        entered, release = asyncio.Event(), asyncio.Event()
+
+        async def replay(*args, **kwargs):
+            assert vm._startup_lifecycle_lock.locked()
+            entered.set()
+            await release.wait()
+            return b"applied\n"
+
+        monkeypatch.setattr(
+            "gns3server.services.configurations.console.session_runner.wait_for_console_ready", AsyncMock()
+        )
+        monkeypatch.setattr("gns3server.services.configurations.console.session_runner._run_leased_session", replay)
+        monkeypatch.setattr(
+            "gns3server.compute.configurations.ConfigurationService._verify_console_restore", AsyncMock()
+        )
+        vm._node_status = "started"
+        url = app.url_path_for("compute:update_qemu_node", project_id=vm.project.id, node_id=vm.id)
+        task = asyncio.create_task(
+            compute_client.post(
+                url + "/configuration-apply",
+                json={
+                    "device_type": "cisco_nxos",
+                    "content": "hostname saved\n",
+                    "wait_ready": True,
+                },
+            )
+        )
+        try:
+            await asyncio.wait_for(entered.wait(), timeout=2)
+            response = await asyncio.wait_for(compute_client.put(url, json={"ram": 2048}), timeout=1)
+            assert response.status_code == 409, response.text
+            assert vm.ram != 2048
+            release.set()
+            result = await asyncio.wait_for(task, timeout=2)
+            assert result.status_code == 204, result.text
+            response = await asyncio.wait_for(compute_client.put(url, json={"ram": 2048}), timeout=1)
+            assert response.status_code == 200, response.text
+            assert vm.ram == 2048
+        finally:
+            task.cancel()
+            await asyncio.gather(task, return_exceptions=True)
+
+    async def test_explicit_running_apply_can_wait_for_the_console(self, app, compute_client, qemu_vm, monkeypatch):
+        from gns3server.compute.qemu import Qemu
+
+        vm = Qemu.instance().get_node(qemu_vm["node_id"], project_id=qemu_vm["project_id"])
+        vm._node_status = "started"
+        ready, replay = AsyncMock(), AsyncMock(return_value=b"applied\n")
+        monkeypatch.setattr("gns3server.services.configurations.console.session_runner.wait_for_console_ready", ready)
+        monkeypatch.setattr("gns3server.services.configurations.console.session_runner._run_leased_session", replay)
+        url = app.url_path_for("compute:update_qemu_node", project_id=vm.project.id, node_id=vm.id)
+        response = await compute_client.post(
+            url + "/configuration-apply",
+            json={
+                "device_type": "cisco_nxos",
+                "content": "hostname saved\n",
+                "wait_ready": True,
+                "running": True,
+            },
+        )
+        assert response.status_code == 204, response.text
+        ready.assert_awaited_once()
+        replay.assert_awaited_once()
 
     async def test_cdrom_interfaces_update_and_read_back(
         self, app: FastAPI, compute_client: AsyncClient, qemu_vm: dict

@@ -16,6 +16,8 @@
 
 import os
 import uuid
+from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from fastapi import FastAPI, status
@@ -23,6 +25,8 @@ from httpx import AsyncClient
 
 from gns3server.compute.project import Project
 from gns3server.compute.project_manager import ProjectManager
+from gns3server.services.configurations.shared.safe_io import write_json
+from gns3server.services.configurations.shared.startup_journal import journal_path, runtime
 from tests.utils import asyncio_patch
 
 pytestmark = pytest.mark.asyncio
@@ -186,6 +190,44 @@ class TestComputeProjectRoutes:
             app.url_path_for("compute:write_compute_project_file", project_id=project.id, file_path="../hello")
         )
         assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    @pytest.mark.parametrize(
+        "engine,initial_state,filename,expected_state",
+        [
+            ("iou", "clean", "startup-config.cfg", "legacy_existing"),
+            ("iou", "initialized", "private-config.cfg", "legacy_existing"),
+            ("iou", "initialized", "notes.txt", "initialized"),
+            ("iou", "resetting", "startup-config.cfg", "resetting"),
+            ("iou", None, "startup-config.cfg", None),
+            ("vpcs", None, "startup-config.cfg", None),
+        ],
+        ids=["iou-startup", "iou-private", "iou-unrelated", "iou-interrupted", "iou-no-journal", "vpcs-file"],
+    )
+    async def test_file_upload_updates_only_the_matching_iou_startup_journal(
+        self, app, compute_client, config, tmp_path, engine, initial_state, filename, expected_state
+    ):
+        config.settings.Server.projects_path = str(tmp_path)
+        project = ProjectManager.instance().create_project(project_id=str(uuid.uuid4()))
+        directory = f"project-files/{engine}/{uuid.uuid4()}"
+        folder = Path(project.path) / directory
+        node = SimpleNamespace(working_dir=str(folder))
+        if initial_state is not None:
+            write_json(journal_path(node), {"version": 1, "generation": 1, "state": initial_state})
+
+        content = b"hostname Imported\r\n"
+        response = await compute_client.post(
+            app.url_path_for(
+                "compute:write_compute_project_file", project_id=project.id, file_path=f"{directory}/{filename}"
+            ),
+            content=content,
+        )
+
+        assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
+        assert (folder / filename).read_bytes() == content
+        if expected_state is None:
+            assert not journal_path(node).exists()
+        else:
+            assert runtime(node) == {"version": 1, "generation": 1, "state": expected_state}
 
     async def test_write_file_forbidden_location(
         self, app: FastAPI, compute_client: AsyncClient, config, tmpdir

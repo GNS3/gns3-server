@@ -253,7 +253,7 @@ class VendorDockerVM(DockerVM):
             process = await asyncio.subprocess.create_subprocess_exec(
                 "docker",
                 "create",
-                self._image,
+                getattr(self, "_startup_restore_image", None) or self._image,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )

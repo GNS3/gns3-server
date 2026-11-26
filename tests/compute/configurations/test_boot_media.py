@@ -6,7 +6,9 @@ from unittest.mock import AsyncMock
 
 import pytest
 
+from gns3server.compute.configurations import ConfigurationService, wipe_configuration
 from gns3server.compute.qemu.qemu_error import QemuError
+from gns3server.schemas.configurations import Engine, MediaRequest
 from gns3server.services.configurations.boot_media import BootMediaProfile, staging
 from gns3server.services.configurations.boot_media.profiles import PROFILES
 from gns3server.services.configurations.boot_media.qemu_attachment import (
@@ -29,6 +31,7 @@ from gns3server.services.configurations.shared.startup_journal import (
     journal_path,
     mark_new_runtime,
     mark_started,
+    mark_wiped,
     runtime,
     set_runtime_state,
 )
@@ -316,6 +319,32 @@ def test_no_free_slot_is_reported_clearly(tmp_path, settings):
     node = media_node(tmp_path / "n", **settings)
     with pytest.raises(QemuError, match="No free IDE CD-ROM slot"):
         ide_slot(node)
+
+
+@pytest.mark.asyncio
+async def test_a_wipe_removes_the_media_and_the_next_boot_restages(tmp_path, media_case):
+    root = tmp_path / "n"
+    node = media_node(root, media_case.profile)
+    await stage_media(node, media_case.profile, "hostname R1\n")
+    assert (root / media_case.filename).is_file()
+    (root / "hda_disk.qcow2").write_bytes(b"old")
+    mark_started(node)
+    wipe_configuration(node, "qemu")
+    mark_wiped(node)
+    assert [path.name for path in root.iterdir()] == [journal_path(node).name]
+    assert runtime(node)["state"] == "clean" and runtime(node)["generation"] == 1
+    assert await stage_media(node, media_case.profile, "hostname R2\n") is True
+    assert media_options(node)
+
+
+@pytest.mark.usefixtures("image_builders")
+@pytest.mark.asyncio
+async def test_the_service_entry_point_stages_for_qemu_only(tmp_path):
+    node = media_node(tmp_path / "n")
+    request = MediaRequest(profile=PROFILE, content="hostname R1\n")
+    assert await ConfigurationService(node, Engine.qemu).stage_media(request) is True
+    with pytest.raises(ConfigurationError, match="configuration_apply_unsupported"):
+        await ConfigurationService(node, Engine.iou).stage_media(request)
 
 
 @pytest.mark.usefixtures("image_builders")
