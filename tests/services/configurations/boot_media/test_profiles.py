@@ -41,6 +41,7 @@ BOOTSTRAP = (
     'Content-Type: multipart/mixed; boundary="==BOUNDARY=="\nMIME-Version: 1.0\n\n'
     "--==BOUNDARY==\nContent-Type: text/cloud-config\n\n#cloud-config\nvinitparam:\n - uuid : abc\n--==BOUNDARY==--\n"
 )
+MASKED_ASA = "hostname FW\nenable password ***** pbkdf2\nusername admin password ***** pbkdf2 privilege 15\n"
 XR_ADMIN = "username admin\n group root-lr\n group cisco-support\n secret 0 cisco123\n!\n"
 XR_LISTING = (
     "!! IOS XR Configuration 26.1.1\nhostname XR1\n"
@@ -59,6 +60,7 @@ PANOS_NO_USER = '<config version="11.2.0"><devices><entry name="localhost.locald
 
 def test_registry_lists_the_supported_profiles():
     assert set(PROFILES) == {
+        "cisco-asav",
         "cisco-cat9kv",
         "cisco-c8000v-autonomous",
         "cisco-c8000v-controller",
@@ -71,6 +73,7 @@ def test_registry_lists_the_supported_profiles():
     }
     assert all(profile.id == key for key, profile in PROFILES.items())
     assert {entry["id"]: entry["device_type"] for entry in list_profiles()} == {
+        "cisco-asav": "cisco_asa",
         "cisco-cat9kv": "cisco_ios_telnet",
         "cisco-c8000v-autonomous": "cisco_ios_telnet",
         "cisco-c8000v-controller": "cisco_ios_telnet",
@@ -134,6 +137,33 @@ def test_ios_xe_profiles_store_the_text_unchanged_as_iosxe_config(profile_id, te
     assert profile.volume_label == "GNS3_BOOT"
     assert profile.media == "cdrom"
     assert profile.device_types == ("cisco_ios_telnet",)
+
+
+def test_asav_stores_the_text_unchanged_as_day0_config_and_boots_an_erased_disk():
+    profile = get_profile("cisco-asav")
+    text = "CSC-FW# sh run\r\n: Saved\r\nhostname asa1\r\nenable password ***** pbkdf2\r\n"
+    assert profile.files(text, CONTEXT) == {"day0-config": text.encode()}
+    assert profile.device_types == ("cisco_asa",) and profile.uses_admin_password
+    assert profile.prepare_disk is not None and profile.stage_seconds > 120
+
+
+def asav_text(content, password):
+    context = MediaContext(node_id=NODE, admin_password=password)
+    return get_profile("cisco-asav").files(content, context)["day0-config"].decode()
+
+
+def test_asav_uses_the_saved_password_when_the_enable_password_is_masked_or_missing():
+    text = asav_text(MASKED_ASA, "Lab#Pass1")
+    assert text.startswith("enable password Lab#Pass1\n")
+    assert text.count("enable password") == 1 and "hostname FW" in text
+    assert "username admin password ***** pbkdf2 privilege 15" in text
+    assert asav_text("hostname FW\n", "Lab#Pass1") == "enable password Lab#Pass1\nhostname FW\n"
+
+
+@pytest.mark.parametrize("real", ["enable password Secret1", "enable password $sha$hash pbkdf2"])
+def test_asav_keeps_a_usable_enable_password_of_the_text(real):
+    text = f"hostname FW\n{real}\n"
+    assert asav_text(text, "Lab#Pass1") == text
 
 
 def nxos_text(content, password=None):
