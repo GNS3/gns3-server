@@ -15,8 +15,9 @@ import pytest
 import telnetlib3
 
 from gns3server.compute.iou.utils.iou_import import nvram_import
-from gns3server.schemas.configurations import ExportFile, ExportResult
+from gns3server.schemas.configurations import ExportFile, ExportResult, StartupEntry
 from gns3server.services.configurations.console.platforms import get_platform
+from gns3server.services.configurations.sets.store import StartupStore
 from gns3server.services.configurations.shared.errors import ConfigurationError
 
 
@@ -26,6 +27,24 @@ def configuration_project(path, nodes=()):
         path=str(path),
         nodes={node_id: SimpleNamespace(name=name, node_type=node_type) for node_id, name, node_type in nodes},
     )
+
+
+def controller_node(tmp_path, **fields):
+    """A stopped console QEMU node registered in a fresh project, with the project's startup store."""
+    project = configuration_project(tmp_path)
+    attributes = {
+        "id": str(uuid4()),
+        "project": project,
+        "node_type": "qemu",
+        "properties": {},
+        "locked": False,
+        "status": "stopped",
+        "console_type": "telnet",
+        "post": AsyncMock(return_value=SimpleNamespace(json={})),
+    } | fields
+    node = SimpleNamespace(**attributes)
+    project.nodes[node.id] = node
+    return project, node, StartupStore(project)
 
 
 def startup_state_reply(state="clean", generation=1):
@@ -75,6 +94,13 @@ def export_result(node, engine, source, filename, content):
         source=source,
         files=(ExportFile(filename=filename, content=content),),
     )
+
+
+def save_startup(store, node_id, device_type, content, *, enabled=True, set_id=None):
+    """Save one node's entry in a set (the project's selected one by default) and return the new document."""
+    document = store.read()
+    entry = StartupEntry(device_type=device_type, content=content, enabled=enabled)
+    return store.put_entry(set_id or document.selected, node_id, entry, revision=document.revision)
 
 
 def run_concurrent_writes(actions, *, timeout=10):
