@@ -1,9 +1,12 @@
 """The public configuration error codes live in one registry and cannot drift."""
 
+import ast
 import re
+from pathlib import Path
 
 import pytest
 
+from gns3server.services.configurations.shared import errors
 from gns3server.services.configurations.shared.errors import (
     CAPTURE_FAILURES,
     CONTROLLER_ERRORS,
@@ -14,6 +17,8 @@ from gns3server.services.configurations.shared.errors import (
     WORKER_ERRORS,
     error_status,
 )
+
+ROOT = Path(errors.__file__).resolve().parents[3]
 
 
 def test_registry_layers_are_nested():
@@ -30,6 +35,24 @@ def test_every_public_code_maps_to_a_client_error_status(code):
 def test_prepare_messages_only_describe_registered_codes():
     assert set(STARTUP_PREPARE_ERRORS) <= PUBLIC_ERRORS
     assert all(STARTUP_PREPARE_ERRORS.values())
+
+
+def test_failure_context_phases_used_by_the_console_are_all_declared():
+    """Every phase passed to session.mark() must survive failure_context()."""
+    from gns3server.services.configurations.shared.failure_context import FAILURE_PHASES, failure_context
+
+    used = set()
+    for path in (ROOT / "services/configurations/console").rglob("*.py"):
+        for node in ast.walk(ast.parse(path.read_text())):
+            if (
+                isinstance(node, ast.Call)
+                and getattr(node.func, "attr", None) == "mark"
+                and node.args
+                and isinstance(node.args[0], ast.Constant)
+            ):
+                used.add(node.args[0].value)
+    assert used and used <= FAILURE_PHASES
+    assert all(failure_context({"phase": phase}) == {"phase": phase} for phase in FAILURE_PHASES)
 
 
 def test_boot_media_codes_are_registered():

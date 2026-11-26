@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import os
 import uuid
 from types import SimpleNamespace
@@ -26,6 +27,9 @@ from gns3server.compute.dynamips import Dynamips
 from gns3server.compute.dynamips.dynamips_error import DynamipsError
 from gns3server.compute.dynamips.nodes.router import Router
 from gns3server.config import Config
+from gns3server.schemas.configurations import ConsoleCredentials
+from gns3server.services.configurations.console.session_runner import run_console_session
+from tests.support.configurations import CONFIG, ApplianceTranscript
 
 
 @pytest_asyncio.fixture
@@ -78,6 +82,42 @@ async def test_console_protocol_changes_preserve_export_proxy(router):
         assert router._wrap_console
         assert router._internal_console_port == internal
         router._hypervisor.send.assert_called_with(f'vm set_con_tcp_port "test" {internal}')
+
+
+@pytest.mark.asyncio
+async def test_dynamips_telnet_exports_and_resets_without_reboot(router, monkeypatch):
+    reader = asyncio.StreamReader()
+    transcript = ApplianceTranscript(reader)
+    transcript.close = lambda: None
+    transcript.wait_closed = AsyncMock()
+    original_open = asyncio.open_connection
+
+    async def connect(*args, **kwargs):
+        if kwargs.get("port") == router._internal_console_port:
+            return reader, transcript
+        return await original_open(*args, **kwargs)
+
+    monkeypatch.setattr(asyncio, "open_connection", connect)
+    router.status = "started"
+    router._hypervisor = MagicMock()
+    router._hypervisor.send = AsyncMock()
+    try:
+        await router.start_wrap_console()
+        assert router._configuration_console_proxy is not None
+        # The upstream Telnet negotiation precedes IOS command input.
+        transcript.buffer = b""
+        for _ in range(2):
+            assert await run_console_session(router, ConsoleCredentials(), deadline=10) == CONFIG
+        await router.reset_console()
+        assert router._configuration_console_proxy is not None
+        transcript.buffer = b""
+        assert await run_console_session(router, ConsoleCredentials(), deadline=10) == CONFIG
+        assert router.status == "started"
+        router._hypervisor.send.assert_not_called()
+        assert b"write memory" not in transcript.commands
+        assert b"copy running-config startup-config" not in transcript.commands
+    finally:
+        await router.stop_wrap_console()
 
 
 @pytest.mark.asyncio
