@@ -16,6 +16,7 @@
 
 import os
 import uuid
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -46,6 +47,46 @@ def test_router(compute_project, manager):
     router = Router("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", compute_project, manager)
     assert router.name == "test"
     assert router.id == "00010203-0405-0607-0809-0a0b0c0d0e0f"
+
+
+@pytest.mark.parametrize(
+    "console_host,bound,expected",
+    [
+        ("0.0.0.0", True, "127.0.0.1"),
+        ("::", True, "::1"),
+        ("192.168.1.10", True, "192.168.1.10"),
+        ("192.168.1.10", False, "127.0.0.1"),
+    ],
+)
+def test_the_proxy_connects_where_dynamips_listens(console_host, bound, expected):
+    node = SimpleNamespace(
+        _manager=SimpleNamespace(port_manager=SimpleNamespace(console_host=console_host)),
+        _hypervisor=SimpleNamespace(binds_console_host=bound),
+    )
+    assert Router._internal_console_host(node) == expected
+
+
+@pytest.mark.asyncio
+async def test_console_protocol_changes_preserve_export_proxy(router):
+    router._hypervisor = MagicMock()
+    router._hypervisor.send = AsyncMock(return_value=[])
+    router.get_status = AsyncMock(return_value="inactive")
+    internal = router._internal_console_port
+    assert internal is not None and internal != router.console
+    for protocol in ("ssh", "telnet"):
+        await router.set_console_type(protocol)
+        assert router._wrap_console
+        assert router._internal_console_port == internal
+        router._hypervisor.send.assert_called_with(f'vm set_con_tcp_port "test" {internal}')
+
+
+@pytest.mark.asyncio
+async def test_start_running_router_does_not_duplicate_console_listener(router):
+    router.get_status = AsyncMock(return_value="running")
+    router.start_wrap_console = AsyncMock()
+    router._wrapper_telnet_servers = [MagicMock()]
+    await router.start()
+    router.start_wrap_console.assert_not_called()
 
 
 def test_convert_project_before_2_0_0_b3(compute_project, manager):

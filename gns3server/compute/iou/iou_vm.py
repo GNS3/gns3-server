@@ -803,6 +803,7 @@ class IOUVM(KernelDatapathMixin, BaseNode):
                 error_prefix = "SSH"
             try:
                 self._telnet_server = await server.start(self._manager.port_manager.console_host, self.console)
+                self._configuration_console_proxy = server
             except OSError as e:
                 await self.stop()
                 raise IOUError(

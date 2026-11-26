@@ -24,6 +24,8 @@ import telnetlib3
 from telnetlib3.server import TelnetServer
 from telnetlib3.telopt import DONT, ECHO, IAC, NAWS, NOP, WILL, WONT
 
+from .console_lease import ConsoleLeaseMixin, ConsoleReadiness
+
 log = logging.getLogger(__name__)
 
 READ_SIZE = 1024
@@ -99,7 +101,7 @@ class TelnetConnection:
         self.is_closing = True
 
 
-class AsyncioTelnetServer:
+class AsyncioTelnetServer(ConsoleLeaseMixin):
     def __init__(
         self,
         reader=None,
@@ -139,6 +141,7 @@ class AsyncioTelnetServer:
         self._keepalive_task = None
         self._server = None
         self._server_handle = None
+        self._init_console_lease()
 
         def default_connection_factory(reader, writer, window_size_changed_callback):
             return TelnetConnection(reader, writer, window_size_changed_callback)
@@ -163,6 +166,8 @@ class AsyncioTelnetServer:
 
         if self._server is not None:
             raise RuntimeError("AsyncioTelnetServer is already started")
+
+        self._console_readiness = ConsoleReadiness()
 
         protocol_factory = self._build_protocol_factory()
         self._server = await telnetlib3.create_server(
@@ -192,8 +197,13 @@ class AsyncioTelnetServer:
 
         await self._run_client_session(network_reader, network_writer)
 
+    def _active_clients(self):
+        return self._connections
+
     async def close(self):
         async with self._close_lock:
+            for protocol in tuple(self._protocol_clients):
+                protocol.writer.close()
             if self._keepalive_task is not None:
                 keepalive_task = self._keepalive_task
                 self._keepalive_task = None
@@ -224,6 +234,19 @@ class AsyncioTelnetServer:
         parent = self
 
         class GNS3TelnetServer(TelnetServer):
+            def connection_made(self, transport):
+                super().connection_made(transport)
+                if parent._console_reserved:
+                    transport.close()
+                else:
+                    # Register before Telnet negotiation or shell scheduling.
+                    parent._protocol_clients.add(self)
+
+            def connection_lost(self, exc):
+                parent._protocol_clients.discard(self)
+                parent._pending_window_sizes.pop(self.writer, None)
+                super().connection_lost(exc)
+
             def _negotiate_echo(self):
                 if self._echo_negotiated:
                     return
@@ -276,6 +299,12 @@ class AsyncioTelnetServer:
     async def _run_client_session(self, network_reader, network_writer):
         self._set_socket_options(network_writer)
 
+        # Also cover the backward-compatible run() entrypoint, which has no
+        # protocol admission hook of its own.
+        if self._console_reserved:
+            network_writer.close()
+            return
+
         connection = self._connection_factory(network_reader, network_writer, self._window_size_changed_callback)
 
         async with self._connections_lock:
@@ -320,6 +349,12 @@ class AsyncioTelnetServer:
                 if not data:
                     break
 
+                if self._exclusive_console is not None:
+                    self._exclusive_console.feed_data(data)
+                    continue
+
+                self._console_readiness.feed_data(data)
+
                 for network_writer, connection in await self._get_connections_snapshot():
                     try:
                         connection.writer.write(data)
@@ -338,6 +373,9 @@ class AsyncioTelnetServer:
         except (ConnectionError, OSError):
             pass
         finally:
+            self._console_readiness.close()
+            if self._exclusive_console is not None:
+                self._exclusive_console.close()
             await self._disconnect_all_clients()
 
     async def _send_keepalives(self):

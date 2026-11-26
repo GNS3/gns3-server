@@ -95,8 +95,8 @@ class BaseNode:
         self._wrap_console = wrap_console
         self._wrap_aux = wrap_aux
         self._wrapper_telnet_servers = []
-        self._wrap_console_reader = None
-        self._wrap_console_writer = None
+        self._configuration_console_proxy = None
+        self._wrap_console_writers = []
         self._internal_console_port = None
         self._internal_aux_port = None
         self._custom_adapters = []
@@ -159,10 +159,10 @@ class BaseNode:
                 self._aux = self._manager.port_manager.get_free_tcp_port(self._project)
 
         if self._wrap_console:
-            self._internal_console_port = self._manager.port_manager.get_free_tcp_port(self._project)
+            self._internal_console_port = self._free_internal_port()
 
         if self._wrap_aux:
-            self._internal_aux_port = self._manager.port_manager.get_free_tcp_port(self._project)
+            self._internal_aux_port = self._free_internal_port()
 
         log.debug(f"{self.manager.module_name}: {self.name} [{self.id}] initialized. Console port {self._console}")
 
@@ -438,6 +438,22 @@ class BaseNode:
 
         return vnc_console_start_port_range, vnc_console_end_port_range
 
+    def _free_internal_port(self):
+        """A port for the appliance's own console behind the proxy.
+
+        Taken above the console range, so that it never takes a console saved for a node still to be loaded.
+        """
+        start = self._manager.port_manager.console_port_range[1] + 1
+        if start > 65535:
+            return self._manager.port_manager.get_free_tcp_port(self._project)
+        return self._manager.port_manager.get_free_tcp_port(
+            self._project, port_range_start=start, port_range_end=min(start + 4999, 65535)
+        )
+
+    def _internal_console_host(self):
+        """Where the appliance's own console listens."""
+        return "127.0.0.1"
+
     async def _wrap_console_proxy(self, internal_port, external_port, console_type):
         """
         Start a console proxy allowing multiple external clients to be
@@ -447,28 +463,27 @@ class BaseNode:
         remaining_trial = 60
         while True:
             try:
-                (self._wrap_console_reader, self._wrap_console_writer) = await asyncio.open_connection(
-                    host="127.0.0.1", port=internal_port
-                )
+                (reader, writer) = await asyncio.open_connection(host=self._internal_console_host(), port=internal_port)
                 break
             except (OSError, ConnectionRefusedError) as e:
                 if remaining_trial <= 0:
                     raise e
             await asyncio.sleep(0.1)
             remaining_trial -= 1
+        self._wrap_console_writers.append(writer)
         if console_type == "telnet":
-            await AsyncioTelnetServer.write_client_intro(self._wrap_console_writer, echo=True)
-            server = AsyncioTelnetServer(
-                reader=self._wrap_console_reader, writer=self._wrap_console_writer, binary=True, echo=True
-            )
+            await AsyncioTelnetServer.write_client_intro(writer, echo=True)
+            server = AsyncioTelnetServer(reader=reader, writer=writer, binary=True, echo=True)
         elif console_type == "ssh":
-            server = AsyncioSSHServer(reader=self._wrap_console_reader, writer=self._wrap_console_writer)
+            server = AsyncioSSHServer(reader=reader, writer=writer)
         else:
             raise NodeError(f"Console wrapper does not support type {console_type}")
 
         # warning: this will raise OSError exception if there is a problem...
         proxy_server = await server.start(self._manager.port_manager.console_host, external_port)
         self._wrapper_telnet_servers.append(proxy_server)
+        if external_port == self.console:
+            self._configuration_console_proxy = server
 
     async def start_wrap_console(self):
         """
@@ -476,29 +491,36 @@ class BaseNode:
         to be connected at the same time
         """
 
-        if self._wrap_console and self._console_type in ("telnet", "ssh"):
-            await self._wrap_console_proxy(self._internal_console_port, self.console, self._console_type)
-            log.info(
-                f"New {self._console_type.upper()} proxy server for console started "
-                f"(internal port = {self._internal_console_port}, external port = {self.console})"
-            )
+        try:
+            if self._wrap_console and self._console_type in ("telnet", "ssh"):
+                await self._wrap_console_proxy(self._internal_console_port, self.console, self._console_type)
+                log.info(
+                    f"New {self._console_type.upper()} proxy server for console started "
+                    f"(internal port = {self._internal_console_port}, external port = {self.console})"
+                )
 
-        if self._wrap_aux and self._aux_type in ("telnet", "ssh"):
-            await self._wrap_console_proxy(self._internal_aux_port, self.aux, self._aux_type)
-            log.info(
-                f"New {self._aux_type.upper()} proxy server for auxiliary console started "
-                f"(internal port = {self._internal_aux_port}, external port = {self.aux})"
-            )
+            if self._wrap_aux and self._aux_type in ("telnet", "ssh"):
+                await self._wrap_console_proxy(self._internal_aux_port, self.aux, self._aux_type)
+                log.info(
+                    f"New {self._aux_type.upper()} proxy server for auxiliary console started "
+                    f"(internal port = {self._internal_aux_port}, external port = {self.aux})"
+                )
+        except BaseException:
+            await self.stop_wrap_console()
+            raise
 
     async def stop_wrap_console(self):
         """
         Stops the console proxy servers.
         """
 
-        if self._wrap_console_writer:
-            self._wrap_console_writer.close()
+        self._configuration_console_proxy = None
+        writers, self._wrap_console_writers = self._wrap_console_writers, []
+        for writer in writers:
+            writer.close()
+        for writer in writers:
             try:
-                await self._wrap_console_writer.wait_closed()
+                await writer.wait_closed()
             except (ConnectionResetError, BrokenPipeError, OSError):
                 # Connection already closed, ignore error
                 pass
@@ -547,6 +569,18 @@ class BaseNode:
         ssh_connection = None
         ssh_process = None
 
+        async def close_console_transport():
+            if ssh_process:
+                ssh_process.close()
+            if ssh_connection:
+                ssh_connection.close()
+                with contextlib.suppress(ConnectionError, OSError, asyncssh.Error):
+                    await ssh_connection.wait_closed()
+            elif telnet_writer:
+                telnet_writer.close()
+                with contextlib.suppress(ConnectionError, OSError):
+                    await telnet_writer.wait_closed()
+
         try:
             host = self._manager.port_manager.console_host
             if self._console_type == "ssh":
@@ -574,6 +608,10 @@ class BaseNode:
             await websocket.close(code=1000)
             log.warning(f"Cannot connect to node {self.name} console server: {e}")
             return
+        finally:
+            if telnet_writer is None:
+                # SSH can connect before opening its terminal fails or is cancelled.
+                await close_console_transport()
 
         def _parse_terminal_size_message(data: bytes):
             """
@@ -671,26 +709,22 @@ class BaseNode:
         # keep forwarding websocket data in both direction
         aws = [asyncio.create_task(ws_forward(telnet_writer)), asyncio.create_task(telnet_forward(telnet_reader))]
 
-        done, pending = await asyncio.wait(aws, return_when=asyncio.FIRST_COMPLETED)
-        for task in done:
-            if task.exception():
-                log.warning(
-                    f"Exception while forwarding WebSocket data to "
-                    f"{self._console_type.upper()} server: {task.exception()!r}"
-                )
-        for task in pending:
-            task.cancel()
-
-        if ssh_connection:
-            if ssh_process:
-                ssh_process.close()
-            ssh_connection.close()
-            await ssh_connection.wait_closed()
-
-        if telnet_writer and hasattr(telnet_writer, "close"):
-            telnet_writer.close()
-            if hasattr(telnet_writer, "wait_closed"):
-                await telnet_writer.wait_closed()
+        try:
+            done, _ = await asyncio.wait(aws, return_when=asyncio.FIRST_COMPLETED)
+            for task in done:
+                if not task.cancelled() and task.exception():
+                    log.warning(
+                        f"Exception while forwarding WebSocket data to "
+                        f"{self._console_type.upper()} server: {task.exception()!r}"
+                    )
+        finally:
+            for task in aws:
+                if not task.done():
+                    task.cancel()
+            try:
+                await asyncio.gather(*aws, return_exceptions=True)
+            finally:
+                await close_console_transport()
 
     async def start_vnc_websocket_console(self, websocket):
         """

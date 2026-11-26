@@ -21,6 +21,8 @@ import socket
 
 import asyncssh
 
+from .console_lease import ConsoleLeaseMixin, ConsoleReadiness
+
 log = logging.getLogger(__name__)
 
 READ_SIZE = 1024
@@ -29,6 +31,20 @@ BROADCAST_DRAIN_TIMEOUT = 10
 
 class _NoAuthSSHServer(asyncssh.SSHServer):
     """Allow console transport without interactive SSH authentication prompts."""
+
+    def __init__(self, owner):
+        self._owner = owner
+        self._connection = None
+
+    def connection_made(self, connection):
+        self._connection = connection
+        if self._owner._console_reserved:
+            connection.close()
+        else:
+            self._owner._protocol_clients.add(connection)
+
+    def connection_lost(self, exc):
+        self._owner._protocol_clients.discard(self._connection)
 
     def begin_auth(self, username):
         return False
@@ -55,7 +71,7 @@ class _ManagedSSHListener:
         return getattr(self._listener, attribute)
 
 
-class AsyncioSSHServer:
+class AsyncioSSHServer(ConsoleLeaseMixin):
     def __init__(self, reader=None, writer=None):
         self._reader = reader
         self._writer = writer
@@ -66,16 +82,19 @@ class AsyncioSSHServer:
         self._broadcast_task = None
         self._server = None
         self._server_handle = None
+        self._init_console_lease()
         self._host_key = asyncssh.generate_private_key("ssh-ed25519")
 
     async def start(self, host, port):
         if self._server is not None:
             raise RuntimeError("AsyncioSSHServer is already started")
 
+        self._console_readiness = ConsoleReadiness()
+
         self._server = await asyncssh.listen(
             host=host,
             port=port,
-            server_factory=_NoAuthSSHServer,
+            server_factory=lambda: _NoAuthSSHServer(self),
             server_host_keys=[self._host_key],
             process_factory=self._run_client_session,
             encoding=None,
@@ -87,6 +106,9 @@ class AsyncioSSHServer:
             self._broadcast_task = asyncio.create_task(self._broadcast_from_upstream())
 
         return self._server_handle
+
+    def _active_clients(self):
+        return self._sessions
 
     async def close(self):
         async with self._close_lock:
@@ -101,6 +123,10 @@ class AsyncioSSHServer:
             # server.wait_closed() does not block indefinitely waiting for
             # them to finish on their own.
             await self._disconnect_all_clients()
+            connections = list(self._protocol_clients)
+            for connection in connections:
+                connection.close()
+            await asyncio.gather(*(connection.wait_closed() for connection in connections), return_exceptions=True)
 
             if self._server is not None:
                 self._server.close()
@@ -113,6 +139,9 @@ class AsyncioSSHServer:
         self._set_socket_options(process)
 
         async with self._sessions_lock:
+            if self._console_reserved:
+                process.exit(0)
+                return
             self._sessions[process] = process
 
         try:
@@ -143,6 +172,12 @@ class AsyncioSSHServer:
                 if not data:
                     break
 
+                if self._exclusive_console is not None:
+                    self._exclusive_console.feed_data(data)
+                    continue
+
+                self._console_readiness.feed_data(data)
+
                 for process in await self._get_sessions_snapshot():
                     try:
                         process.stdout.write(data)
@@ -154,6 +189,9 @@ class AsyncioSSHServer:
         except (ConnectionError, OSError):
             pass
         finally:
+            self._console_readiness.close()
+            if self._exclusive_console is not None:
+                self._exclusive_console.close()
             await self._disconnect_all_clients()
 
     async def _get_sessions_snapshot(self):

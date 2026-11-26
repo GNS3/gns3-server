@@ -100,7 +100,7 @@ class Router(KernelDatapathMixin, BaseNode):
             console_type=console_type,
             aux=aux,
             aux_type=aux_type,
-            wrap_console=(console_type == "ssh"),
+            wrap_console=(not ghost_flag and console_type in ("telnet", "ssh")),
             wrap_aux=(aux_type == "ssh"),
         )
 
@@ -272,8 +272,8 @@ class Router(KernelDatapathMixin, BaseNode):
             log.debug(f'Router {self._platform} "{self._name}" [{self._id}] has been created')
 
             if self._console is not None:
-                # For SSH console, tell Dynamips to listen on the internal port so that
-                # the AsyncioSSHServer proxy can wrap it on the external console port.
+                # Keep the appliance console behind the proxy for client sharing and
+                # exclusive configuration export access with either console protocol.
                 con_port = (
                     self._internal_console_port if self._wrap_console and self._internal_console_port else self._console
                 )
@@ -365,11 +365,18 @@ class Router(KernelDatapathMixin, BaseNode):
             self._memory_watcher = FileWatcher(self._memory_files(), self._memory_changed, strategy="hash", delay=30)
             monitor_process(self._hypervisor.process, self._termination_callback)
 
-        if self._wrap_console or self._wrap_aux:
+        if (self._wrap_console or self._wrap_aux) and not self._wrapper_telnet_servers:
             try:
                 await self.start_wrap_console()
             except OSError as e:
                 raise DynamipsError(f"Could not start Dynamips console wrapper: {e}")
+
+    def _internal_console_host(self):
+        """Dynamips binds its consoles to the console host when it supports that, else to every address."""
+        if not self._hypervisor.binds_console_host:
+            return "127.0.0.1"
+        host = self._manager.port_manager.console_host
+        return {"0.0.0.0": "127.0.0.1", "::": "::1"}.get(host, host)
 
     async def _termination_callback(self, returncode):
         """
@@ -1006,6 +1013,9 @@ class Router(KernelDatapathMixin, BaseNode):
         self.console = console
         con_port = self._internal_console_port if self._wrap_console and self._internal_console_port else self.console
         await self._hypervisor.send(f'vm set_con_tcp_port "{self._name}" {con_port}')
+        if self.status == "started" and self._wrap_console:
+            # The proxy owns the external port: move its listener too.
+            await self.reset_wrap_console()
 
     async def set_console_type(self, console_type):
         """
@@ -1022,20 +1032,12 @@ class Router(KernelDatapathMixin, BaseNode):
         self.console_type = console_type
 
         if self._console:
-            if console_type == "ssh":
-                # Switching to SSH: ensure an internal port is allocated and redirect Dynamips to it.
+            if console_type in ("telnet", "ssh") and not self._ghost_flag:
+                # Both protocols need the proxy's exclusive configuration lease.
                 self._wrap_console = True
                 if self._internal_console_port is None:
-                    self._internal_console_port = self._manager.port_manager.get_free_tcp_port(self._project)
+                    self._internal_console_port = self._free_internal_port()
                 await self._hypervisor.send(f'vm set_con_tcp_port "{self._name}" {self._internal_console_port}')
-            elif console_type == "telnet":
-                # Switching to telnet: stop SSH wrapper if running and redirect Dynamips to external port.
-                await self.stop_wrap_console()
-                self._wrap_console = False
-                if self._internal_console_port is not None:
-                    self._manager.port_manager.release_tcp_port(self._internal_console_port, self._project)
-                    self._internal_console_port = None
-                await self._hypervisor.send(f'vm set_con_tcp_port "{self._name}" {self._console}')
 
     async def set_aux(self, aux):
         """
@@ -1084,7 +1086,8 @@ class Router(KernelDatapathMixin, BaseNode):
         Reset console
         """
 
-        pass  # reset console is not supported with Dynamips
+        if self.status == "started" and self._wrap_console:
+            await self.reset_wrap_console()
 
     async def get_cpu_usage(self, cpu_id=0):
         """

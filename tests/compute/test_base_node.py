@@ -14,14 +14,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import os
 import shutil
 from collections import OrderedDict
-from unittest.mock import MagicMock, patch
+from types import SimpleNamespace
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 import pytest_asyncio
 
+from gns3server.compute.base_node import BaseNode
 from gns3server.compute.compute_error import ComputeError
 from gns3server.compute.docker.docker_vm import DockerVM
 from gns3server.compute.error import NodeError
@@ -65,6 +68,15 @@ def test_console(compute_project, manager, port_manager):
     assert node.console is None
 
 
+def test_internal_proxy_ports_stay_out_of_the_console_range():
+    """Saved console ports of nodes that are still to be loaded must not be taken."""
+    manager = MagicMock()
+    manager.port_manager.console_port_range = (5000, 10000)
+    node = SimpleNamespace(_manager=manager, _project="p")
+    BaseNode._free_internal_port(node)
+    manager.port_manager.get_free_tcp_port.assert_called_once_with("p", port_range_start=10001, port_range_end=15000)
+
+
 def test_change_console_port(node, port_manager):
 
     port1 = port_manager.get_free_tcp_port(node.project)
@@ -104,6 +116,38 @@ async def test_close(node, port_manager):
 
     # Called twice closed should return False
     assert await node.close() is False
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("fail_aux", [False, True])
+async def test_console_wrappers_close_every_upstream_even_when_aux_start_fails(node, monkeypatch, fail_aux):
+    import asyncio
+
+    writers = [MagicMock(wait_closed=AsyncMock(), drain=AsyncMock()) for _ in range(2)]
+    listeners = [MagicMock(wait_closed=AsyncMock()) for _ in range(2)]
+    monkeypatch.setattr(
+        asyncio, "open_connection", AsyncMock(side_effect=[(MagicMock(), writer) for writer in writers])
+    )
+    monkeypatch.setattr("gns3server.compute.base_node.AsyncioTelnetServer.write_client_intro", AsyncMock())
+    monkeypatch.setattr(
+        "gns3server.compute.base_node.AsyncioTelnetServer.start",
+        AsyncMock(side_effect=[listeners[0], OSError("aux bind failed") if fail_aux else listeners[1]]),
+    )
+    node._wrap_console = node._wrap_aux = True
+    node._console_type = node._aux_type = "telnet"
+    if fail_aux:
+        with pytest.raises(OSError, match="aux bind failed"):
+            await node.start_wrap_console()
+    else:
+        await node.start_wrap_console()
+        await node.stop_wrap_console()
+    for writer in writers:
+        writer.close.assert_called_once()
+        writer.wait_closed.assert_awaited_once()
+    listeners[0].close.assert_called_once()
+    assert node._configuration_console_proxy is None
+    assert not node._wrap_console_writers
+    assert not node._wrapper_telnet_servers
 
 
 def test_aux(compute_project, manager, port_manager):
@@ -496,8 +540,6 @@ class _GoneConsoleWebsocket:
     """
 
     def __init__(self):
-        from types import SimpleNamespace
-
         self.client = SimpleNamespace(host="127.0.0.1", port=5000)
 
     async def receive(self):
@@ -510,13 +552,33 @@ class _GoneConsoleWebsocket:
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("failure", [ConnectionError, asyncio.CancelledError])
+async def test_console_websocket_releases_ssh_connection_when_terminal_setup_fails(node, monkeypatch, failure):
+    node._console_type = "ssh"
+    node.status = "started"
+    connection = MagicMock(create_process=AsyncMock(side_effect=failure), wait_closed=AsyncMock())
+    monkeypatch.setattr("gns3server.compute.base_node.asyncssh.connect", AsyncMock(return_value=connection))
+    websocket = _GoneConsoleWebsocket()
+    websocket.close = AsyncMock()
+
+    if failure is asyncio.CancelledError:
+        with pytest.raises(asyncio.CancelledError):
+            await node.start_websocket_console(websocket)
+    else:
+        await node.start_websocket_console(websocket)
+        websocket.close.assert_awaited_once_with(code=1000)
+
+    connection.close.assert_called_once_with()
+    connection.wait_closed.assert_awaited_once_with()
+
+
+@pytest.mark.asyncio
 async def test_console_websocket_client_disconnect_while_node_output_streams(
     compute_project, manager, port_manager, monkeypatch, caplog
 ):
     # regression test: the client disconnects while the node is still streaming
     # console output. telnet_forward used to let the (empty-str) WebSocketDisconnect
     # from send_bytes escape, logging a message-less WARNING.
-    import asyncio
     import logging
 
     node = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", compute_project, manager)
