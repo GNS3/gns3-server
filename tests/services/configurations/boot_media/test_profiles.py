@@ -41,25 +41,11 @@ BOOTSTRAP = (
     'Content-Type: multipart/mixed; boundary="==BOUNDARY=="\nMIME-Version: 1.0\n\n'
     "--==BOUNDARY==\nContent-Type: text/cloud-config\n\n#cloud-config\nvinitparam:\n - uuid : abc\n--==BOUNDARY==--\n"
 )
-MASKED_ASA = "hostname FW\nenable password ***** pbkdf2\nusername admin password ***** pbkdf2 privilege 15\n"
-XR_ADMIN = "username admin\n group root-lr\n group cisco-support\n secret 0 cisco123\n!\n"
-XR_LISTING = (
-    "!! IOS XR Configuration 26.1.1\nhostname XR1\n"
-    "username lab\n group root-lr\n group cisco-support\n secret 10 $6$abc$def\n!\nend\n"
-)
-ADMIN_HASH = "$6$salt1234$Zm9vYmFyYmF6UXV4.abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ab"
-WITH_ADMIN = f"system\n host-name x\n aaa\n  user admin\n   password {ADMIN_HASH}\n  !\n  user ops\n   password $6$o$h\n  !\n !\n!\n"
-NO_ADMIN = "system\n host-name x\n aaa\n  user ops\n   password $6$o$h\n   group netadmin\n  !\n !\n!\n"
-PANOS = (
-    '<config version="11.2.0"><mgt-config><users><entry name="admin"><phash>fnRL/G5lXVMug</phash><permissions>'
-    "<role-based><superuser>yes</superuser></role-based></permissions></entry></users></mgt-config>"
-    '<devices><entry name="localhost.localdomain"/></devices></config>'
-)
-PANOS_NO_USER = '<config version="11.2.0"><devices><entry name="localhost.localdomain"/></devices></config>'
 
 
 def test_registry_lists_the_supported_profiles():
     assert set(PROFILES) == {
+        "arista-veos",
         "cisco-asav",
         "cisco-cat9kv",
         "cisco-c8000v-autonomous",
@@ -73,6 +59,7 @@ def test_registry_lists_the_supported_profiles():
     }
     assert all(profile.id == key for key, profile in PROFILES.items())
     assert {entry["id"]: entry["device_type"] for entry in list_profiles()} == {
+        "arista-veos": "arista_eos",
         "cisco-asav": "cisco_asa",
         "cisco-cat9kv": "cisco_ios_telnet",
         "cisco-c8000v-autonomous": "cisco_ios_telnet",
@@ -147,6 +134,9 @@ def test_asav_stores_the_text_unchanged_as_day0_config_and_boots_an_erased_disk(
     assert profile.prepare_disk is not None and profile.stage_seconds > 120
 
 
+MASKED_ASA = "hostname FW\nenable password ***** pbkdf2\nusername admin password ***** pbkdf2 privilege 15\n"
+
+
 def asav_text(content, password):
     context = MediaContext(node_id=NODE, admin_password=password)
     return get_profile("cisco-asav").files(content, context)["day0-config"].decode()
@@ -200,6 +190,13 @@ def test_nxosv9k_without_a_usable_password_leaves_the_text_alone():
 def xr_text(content, password=None):
     context = MediaContext(node_id=NODE, admin_password=password)
     return get_profile("cisco-iosxrv9k").files(content, context)["iosxr_config.txt"].decode()
+
+
+XR_ADMIN = "username admin\n group root-lr\n group cisco-support\n secret 0 cisco123\n!\n"
+XR_LISTING = (
+    "!! IOS XR Configuration 26.1.1\nhostname XR1\n"
+    "username lab\n group root-lr\n group cisco-support\n secret 10 $6$abc$def\n!\nend\n"
+)
 
 
 def test_iosxrv9k_stores_the_text_as_iosxr_config_with_lf_line_endings():
@@ -371,6 +368,11 @@ def initial_admin_cfg(text, password=None):
     return base64.b64decode(entry["content"]).decode() if entry else None, files
 
 
+ADMIN_HASH = "$6$salt1234$Zm9vYmFyYmF6UXV4.abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ab"
+WITH_ADMIN = f"system\n host-name x\n aaa\n  user admin\n   password {ADMIN_HASH}\n  !\n  user ops\n   password $6$o$h\n  !\n !\n!\n"
+NO_ADMIN = "system\n host-name x\n aaa\n  user ops\n   password $6$o$h\n   group netadmin\n  !\n !\n!\n"
+
+
 def test_the_texts_own_admin_hash_is_loaded_first_and_wins_over_the_node_password():
     config, files = initial_admin_cfg(WITH_ADMIN, "NodePassword1")
     assert config == f"system\n aaa\n  user admin\n   password {ADMIN_HASH}\n  !\n !\n!\n"
@@ -465,6 +467,14 @@ def test_the_saved_password_is_used_only_when_it_is_one_printable_token(password
     from gns3server.services.configurations.boot_media.media_profile import plain_password
 
     assert plain_password(MediaContext(node_id=NODE, admin_password=password)) == (password if usable else None)
+
+
+PANOS = (
+    '<config version="11.2.0"><mgt-config><users><entry name="admin"><phash>fnRL/G5lXVMug</phash><permissions>'
+    "<role-based><superuser>yes</superuser></role-based></permissions></entry></users></mgt-config>"
+    '<devices><entry name="localhost.localdomain"/></devices></config>'
+)
+PANOS_NO_USER = '<config version="11.2.0"><devices><entry name="localhost.localdomain"/></devices></config>'
 
 
 def test_panos_delivers_a_bootstrap_package():

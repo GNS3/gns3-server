@@ -5,6 +5,7 @@ from gns3server.services.configurations.shared.errors import ConfigurationError
 
 from ..media_profile import BootMediaProfile
 from . import (
+    arista_veos,
     cisco_asav,
     cisco_c8000v_autonomous,
     cisco_c8000v_controller,
@@ -20,6 +21,7 @@ from . import (
 PROFILES: dict[str, BootMediaProfile] = {
     profile.id: profile
     for profile in (
+        arista_veos.PROFILE,
         cisco_asav.PROFILE,
         cisco_cat9kv.PROFILE,
         cisco_c8000v_autonomous.PROFILE,
