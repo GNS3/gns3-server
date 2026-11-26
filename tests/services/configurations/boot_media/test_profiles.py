@@ -41,11 +41,13 @@ BOOTSTRAP = (
 
 def test_registry_lists_the_supported_profiles():
     assert set(PROFILES) == {
+        "cisco-cat9kv",
         "cisco-c8000v-autonomous",
         "cisco-c8000v-controller",
     }
     assert all(profile.id == key for key, profile in PROFILES.items())
     assert {entry["id"]: entry["device_type"] for entry in list_profiles()} == {
+        "cisco-cat9kv": "cisco_ios_telnet",
         "cisco-c8000v-autonomous": "cisco_ios_telnet",
         "cisco-c8000v-controller": "cisco_ios_telnet",
     }
@@ -82,8 +84,9 @@ def test_profile_validation_rejects_unsafe_file_names():
     "profile_id,text",
     [
         ("cisco-c8000v-autonomous", "hostname R1\r\ninterface Gi1\r\n ip address 10.0.0.1 255.255.255.0\r\nend\r\n"),
+        ("cisco-cat9kv", "hostname SW1\r\nusername admin privilege 15 secret 9 $9$abc\r\nend\r\n"),
     ],
-    ids=["c8000v-autonomous"],
+    ids=["c8000v-autonomous", "cat9kv"],
 )
 def test_ios_xe_profiles_store_the_text_unchanged_as_iosxe_config(profile_id, text):
     profile = get_profile(profile_id)

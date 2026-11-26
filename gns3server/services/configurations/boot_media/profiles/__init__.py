@@ -7,11 +7,13 @@ from ..media_profile import BootMediaProfile
 from . import (
     cisco_c8000v_autonomous,
     cisco_c8000v_controller,
+    cisco_cat9kv,
 )
 
 PROFILES: dict[str, BootMediaProfile] = {
     profile.id: profile
     for profile in (
+        cisco_cat9kv.PROFILE,
         cisco_c8000v_autonomous.PROFILE,
         cisco_c8000v_controller.PROFILE,
     )
