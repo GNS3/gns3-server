@@ -1330,6 +1330,7 @@ class QemuVM(KernelDatapathMixin, BaseNode):
         async with self._execute_lock:
             # stop the QEMU process
             self._hw_virtualization = False
+            survived = False
             try:
                 if self.is_running():
                     log.debug(f'Stopping QEMU VM "{self._name}" PID={self._process.pid}')
@@ -1359,8 +1360,16 @@ class QemuVM(KernelDatapathMixin, BaseNode):
                                 self._process.kill()
                             except ProcessLookupError:
                                 pass
-                            if self._process.returncode is None:
-                                log.warning(f'QEMU VM "{self._name}" PID={self._process.pid} is still running')
+                            try:
+                                await gns3server.utils.asyncio.wait_for_process_termination(self._process, timeout=10)
+                            except ProcessLookupError:
+                                pass
+                            except TimeoutError:
+                                # Keep the handle: the guest may still be writing to its disks.
+                                survived = True
+                                raise QemuError(
+                                    f'QEMU VM "{self._name}" PID={self._process.pid} did not exit after being killed'
+                                )
                 self._process = None
                 self._stop_cpulimit()
                 self._stop_swtpm()
@@ -1386,7 +1395,8 @@ class QemuVM(KernelDatapathMixin, BaseNode):
                 # stop was free to clear underneath it ("dictionary changed
                 # size during iteration"). Serialized, it finds uBridge
                 # already gone and sweeps nothing.
-                await self._stop_ubridge()
+                if not survived:
+                    await self._stop_ubridge()
 
     async def _open_qemu_monitor_connection_vm(self, timeout=10):  # noqa: ASYNC109 - operation-specific timeout is intentional
         """
@@ -1505,7 +1515,13 @@ class QemuVM(KernelDatapathMixin, BaseNode):
         # FIXME: Don't wait for ACPI shutdown when closing the project, should we?
         if self.on_close == "shutdown_signal":
             self.on_close = "power_off"
-        await self.stop()
+        try:
+            await self.stop()
+        except QemuError as e:
+            if not self.is_running():
+                raise
+            # A process that cannot be killed must not abort closing the node.
+            log.error(e)
 
         for adapter in self._ethernet_adapters:
             if adapter is not None:

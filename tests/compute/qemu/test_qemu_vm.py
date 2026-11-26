@@ -20,7 +20,7 @@ import os
 import stat
 from pathlib import Path
 from unittest import mock
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 import pytest_asyncio
@@ -188,6 +188,42 @@ async def test_stop(vm, running_subprocess_mock):
             await vm.stop()
             assert vm.is_running() is False
             process.terminate.assert_called_with()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("on_close,graceful", [("power_off", False), ("shutdown_signal", True)])
+async def test_stop_kills_process_when_it_does_not_exit_in_time(vm, running_subprocess_mock, on_close, graceful):
+    vm._process = running_subprocess_mock
+    vm.on_close = on_close
+    # The first wait times out, the wait after kill() sees the exit.
+    wait = AsyncMock(side_effect=[TimeoutError, None])
+    with (
+        patch.object(vm, "_control_vm", new=AsyncMock()),
+        patch("gns3server.utils.asyncio.wait_for_process_termination", new=wait),
+    ):
+        await vm.stop()
+    assert running_subprocess_mock.terminate.called is not graceful
+    running_subprocess_mock.kill.assert_called_once_with()
+    assert wait.await_count == 2
+    assert vm._process is None
+
+
+@pytest.mark.asyncio
+async def test_stop_fails_and_keeps_the_process_when_its_exit_cannot_be_confirmed(vm, running_subprocess_mock):
+    vm._process = running_subprocess_mock
+    vm.status = "started"
+    with (
+        patch("gns3server.utils.asyncio.wait_for_process_termination", new=AsyncMock(side_effect=TimeoutError)),
+        patch.object(vm, "_stop_ubridge", new=AsyncMock()) as stop_ubridge,
+    ):
+        with pytest.raises(QemuError, match="did not exit"):
+            await vm.stop()
+    running_subprocess_mock.kill.assert_called_once_with()
+    # Wipe checks this handle before it erases a disk.
+    assert vm._process is running_subprocess_mock
+    assert vm.status == "started"
+    # The live guest keeps its datapath.
+    stop_ubridge.assert_not_awaited()
 
 
 @pytest.mark.asyncio
