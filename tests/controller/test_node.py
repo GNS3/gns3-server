@@ -24,10 +24,12 @@ from unittest.mock import ANY, AsyncMock, MagicMock, patch
 import pytest
 
 from gns3server.compute.docker.docker_error import DockerError
+from gns3server.controller.configurations import preparation_marker
 from gns3server.controller.controller_error import ComputeConflictError, ControllerError
 from gns3server.controller.node import Node
 from gns3server.controller.project import Project
 from gns3server.services.configurations.shared.node_lease import node_lease
+from gns3server.services.configurations.shared.safe_io import write_json
 from tests.utils import AsyncioMagicMock, asyncio_patch
 
 
@@ -969,6 +971,52 @@ async def test_start(node, compute):
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("action", ["stop", "delete"])
+async def test_stop_and_delete_cancel_startup_preparation(node, compute, action):
+    compute.post = AsyncMock()
+    compute.delete = AsyncMock()
+    preparing, cancelled = asyncio.Event(), asyncio.Event()
+
+    async def prepare(_node):
+        preparing.set()
+        try:
+            await asyncio.Future()
+        except asyncio.CancelledError:
+            cancelled.set()
+            raise
+
+    with patch("gns3server.controller.configurations.prepare_start", new=prepare):
+        async with asyncio.timeout(5), asyncio.TaskGroup() as tasks:
+            tasks.create_task(node.start())
+            await preparing.wait()
+            await getattr(node, action)()
+
+    assert cancelled.is_set()
+    start_path = f"/projects/{node.project.id}/vpcs/nodes/{node.id}/start"
+    assert all(call.args[0] != start_path for call in compute.post.await_args_list)
+
+
+@pytest.mark.asyncio
+async def test_cancelling_start_during_preparation_prevents_compute_launch(node, compute):
+    compute.post = AsyncMock()
+    preparing = asyncio.Event()
+
+    async def prepare(_node):
+        preparing.set()
+        await asyncio.Future()
+
+    with patch("gns3server.controller.configurations.prepare_start", new=prepare):
+        async with asyncio.timeout(5), asyncio.TaskGroup() as tasks:
+            start = tasks.create_task(node.start())
+            await preparing.wait()
+            start.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await start
+
+    compute.post.assert_not_awaited()
+
+
+@pytest.mark.asyncio
 async def test_resume_does_not_reapply_startup_configuration(node, compute):
     node._status = "suspended"
     with patch("gns3server.controller.configurations.prepare_start", new_callable=AsyncMock) as prepare:
@@ -1095,6 +1143,22 @@ async def test_reload(node, compute):
     compute.post = AsyncioMagicMock()
     await node.reload()
     compute.post.assert_called_with(f"/projects/{node.project.id}/vpcs/nodes/{node.id}/reload", timeout=240)
+
+
+@pytest.mark.asyncio
+async def test_reload_of_a_stopped_node_with_pending_preparation_calls_start(node, compute):
+    node._status = "stopped"
+    write_json(preparation_marker(node), {"set_id": "x"})
+    compute.post = AsyncMock()
+    with (
+        patch.object(node, "start", new_callable=AsyncMock) as start,
+        patch.object(node, "stop", new_callable=AsyncMock) as stop,
+    ):
+        await node.reload()
+
+    stop.assert_awaited_once_with()
+    start.assert_awaited_once_with()
+    compute.post.assert_not_awaited()
 
 
 @pytest.mark.asyncio
