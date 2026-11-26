@@ -9,7 +9,8 @@ from uuid import uuid4
 import pytest
 
 from gns3server.compute.configurations import ConfigurationService, wipe_configuration
-from gns3server.schemas.configurations import ApplyOptions, Engine, ExportOptions, Source
+from gns3server.controller.configurations import startup_delivery
+from gns3server.schemas.configurations import ApplyOptions, Engine, ExportOptions, Source, compatible_device_type
 from gns3server.services.configurations.shared.errors import ConfigurationError
 from gns3server.utils.docker_node_type import is_frr_node
 
@@ -57,6 +58,23 @@ def test_frr_containers_are_recognized_by_image_or_profile(image, environment, e
 @pytest.mark.parametrize("console_type,environment", [("docker_exec", ""), ("telnet", "GNS3_UNIX_SOCKET_NIO=1")])
 def test_vendor_containers_are_never_treated_as_frr(console_type, environment):
     assert not is_frr_node(console_type, environment, "gns3/frr:latest")
+
+
+@pytest.mark.parametrize(
+    "netmiko,driver", [(None, "frr"), ("", "frr"), ("linux", "linux_interfaces"), ("arista_eos", "arista_eos")]
+)
+def test_the_controller_starts_an_frr_node_from_its_file_unless_a_device_type_says_otherwise(netmiko, driver):
+    node = SimpleNamespace(
+        node_type="docker",
+        netmiko_device_type=netmiko,
+        console_type="telnet",
+        properties={"image": "gns3/frr:latest", "environment": ""},
+    )
+    delivery = startup_delivery(node)
+    assert delivery.driver == driver
+    assert delivery.method == ("native" if driver in ("frr", "linux_interfaces") else "console")
+    assert not delivery.native_engine
+    assert compatible_device_type("docker", "frr") and not compatible_device_type("qemu", "frr")
 
 
 @pytest.mark.asyncio

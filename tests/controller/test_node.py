@@ -19,7 +19,7 @@ import asyncio
 import os
 import shutil
 import uuid
-from unittest.mock import ANY, AsyncMock, MagicMock
+from unittest.mock import ANY, AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -969,6 +969,39 @@ async def test_start(node, compute):
 
 
 @pytest.mark.asyncio
+async def test_resume_does_not_reapply_startup_configuration(node, compute):
+    node._status = "suspended"
+    with patch("gns3server.controller.configurations.prepare_start", new_callable=AsyncMock) as prepare:
+        await node.start()
+    prepare.assert_not_called()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "code, message",
+    [
+        ("invalid_startup_configurations", "Cannot prepare startup configuration"),
+        ("device_type_required", "Choose the node's Netmiko device type"),
+        ("device_type_unsupported", "has no console recipe"),
+        ("configuration_profile_mismatch", "does not match"),
+        ("configuration_restore_console_required", "Telnet or SSH"),
+        ("configuration_apply_unsupported", "boot media profile"),
+        ("boot_media_tool_missing", "xorriso"),
+        ("boot_media_build_failed", "could not be built"),
+        ("boot_media_too_large", "too large"),
+        ("startup_media_profile_unknown", "not known to the server"),
+    ],
+)
+async def test_invalid_startup_document_returns_controller_error(node, code, message):
+    from gns3server.services.configurations.shared.errors import ConfigurationError
+
+    with patch("gns3server.controller.configurations.prepare_start", new_callable=AsyncMock) as prepare:
+        prepare.side_effect = ConfigurationError(code)
+        with pytest.raises(ControllerError, match=message):
+            await node.start()
+
+
+@pytest.mark.asyncio
 async def test_start_notifies_links(node, compute):
     """
     A successful start tells the node's links: the Ethernet-switch fast
@@ -982,6 +1015,24 @@ async def test_start_notifies_links(node, compute):
 
     await node.start()
     assert link.node_started.called
+
+
+@pytest.mark.asyncio
+async def test_successful_compute_start_schedules_configuration_even_if_link_reconciliation_fails(node, compute):
+    compute.post = AsyncMock()
+    link = AsyncMock()
+    link.deferred = False
+    link.node_started.side_effect = ControllerError("link reconciliation failed")
+    node.add_link(link)
+    prepared = object()
+    with (
+        patch("gns3server.controller.configurations.prepare_start", new_callable=AsyncMock, return_value=prepared),
+        patch("gns3server.controller.configurations.launch_apply") as launch,
+    ):
+        with pytest.raises(ControllerError, match="link reconciliation failed"):
+            await node.start()
+    launch.assert_called_once_with(node, prepared)
+    assert node.status == "started"
 
 
 @pytest.mark.asyncio
@@ -1020,6 +1071,22 @@ async def test_suspend(node, compute):
     compute.post = AsyncioMagicMock()
     await node.suspend()
     compute.post.assert_called_with(f"/projects/{node.project.id}/vpcs/nodes/{node.id}/suspend", timeout=240)
+
+
+@pytest.mark.asyncio
+async def test_reload_of_a_boot_media_node_is_a_plain_reload_not_a_stop_and_start(compute, project):
+    media = Node(
+        project,
+        compute,
+        "c8k",
+        node_id=str(uuid.uuid4()),
+        node_type="qemu",
+        properties={"startup_media_profile": "cisco-c8000v-autonomous"},
+    )
+    compute.post = AsyncioMagicMock()
+    with patch("gns3server.controller.configurations.selected_entry", return_value=("set", object())):
+        await media.reload()
+    compute.post.assert_called_with(f"/projects/{project.id}/qemu/nodes/{media.id}/reload", timeout=240)
 
 
 @pytest.mark.asyncio

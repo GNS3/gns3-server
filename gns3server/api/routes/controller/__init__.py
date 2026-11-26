@@ -68,6 +68,7 @@ from . import (
     api_keys,
     appliances,
     computes,
+    configurations,
     controller,
     drawings,
     groups,
@@ -116,6 +117,10 @@ router.include_router(projects.router, prefix="/projects", tags=["Projects"])
 router.include_router(projects.distributions_router, prefix="/distributions", tags=["Projects"])
 
 router.include_router(nodes.router, prefix="/projects/{project_id}/nodes", tags=["Nodes"])
+
+router.include_router(configurations.router, prefix="/projects/{project_id}", tags=["Configurations"])
+router.include_router(configurations.bulk_router, prefix="/projects/{project_id}", tags=["Configurations"])
+router.include_router(configurations.startup_router, prefix="/projects/{project_id}", tags=["Startup configurations"])
 
 router.include_router(links.router, prefix="/projects/{project_id}/links", tags=["Links"])
 

@@ -151,6 +151,29 @@ async def test_nxos_hostname_prefixed_login_uses_guest_credentials_without_enabl
 
 
 @pytest.mark.asyncio
+async def test_asa_export_with_enable_password_pages_output_and_leaves_console_responsive(appliance):
+    node, original = appliance
+    asa = PaginatedASA(original.reader)
+    node._configuration_console_proxy._writer = asa
+    from gns3server.controller.configurations import credentials_for
+
+    node.default_username = ""
+    node.default_password = "enable-secret"
+    credentials = credentials_for(node, "cisco_asa")
+    for _ in range(2):
+        assert await run_console_session(node, credentials, device_type="cisco_asa", deadline=5) == asa.content
+        assert not asa.frozen
+        assert not node._configuration_console_proxy._console_recovery_required
+    assert asa.commands[:4] == [b"", b"enable", b"enable-secret", b"terminal pager 24"]
+    assert b"terminal pager 0" not in asa.commands
+    assert asa.advances > 2
+    async with node._configuration_console_proxy.lease_console() as lease:
+        lease.write(b"\r")
+        await lease.drain()
+        assert await asyncio.wait_for(lease.reader.readuntil(b"ASAv#"), timeout=2) == b"\r\nASAv#"
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("role", ["vmanage", "vbond", "vsmart"])
 @pytest.mark.parametrize("suffix", ["#", "@#"])
 async def test_viptela_login_and_capture_use_valid_terminal_settings(appliance, role, suffix):

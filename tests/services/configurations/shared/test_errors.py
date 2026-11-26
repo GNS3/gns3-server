@@ -37,6 +37,31 @@ def test_prepare_messages_only_describe_registered_codes():
     assert all(STARTUP_PREPARE_ERRORS.values())
 
 
+def unregistered_codes(paths, allowed=frozenset()):
+    """Literal codes passed to ``ConfigurationError(...)`` that clients could not be told about."""
+    found = set()
+    for path in paths:
+        for node in ast.walk(ast.parse(path.read_text())):
+            if (
+                isinstance(node, ast.Call)
+                and getattr(node.func, "id", None) == "ConfigurationError"
+                and node.args
+                and isinstance(node.args[0], ast.Constant)
+                and isinstance(node.args[0].value, str)
+                and node.args[0].value not in PUBLIC_ERRORS | allowed
+            ):
+                found.add(node.args[0].value)
+    return found
+
+
+def test_literal_error_codes_raised_by_the_controller_and_boot_media_are_registered():
+    # Otherwise failure()/safe_error() would silently degrade the code to a generic one.
+    generic = {"configuration_operation_failed", "configuration_export_failed", "configuration_compute_unavailable"}
+    controller = [ROOT / "controller/configurations.py"]
+    assert not unregistered_codes(controller, generic)
+    assert not unregistered_codes((ROOT / "services/configurations/boot_media").rglob("*.py"))
+
+
 def test_failure_context_phases_used_by_the_console_are_all_declared():
     """Every phase passed to session.mark() must survive failure_context()."""
     from gns3server.services.configurations.shared.failure_context import FAILURE_PHASES, failure_context

@@ -6,9 +6,14 @@ from uuid import UUID, uuid4
 import pytest
 from pydantic import ValidationError
 
-from gns3server.schemas.configurations import Selection
+from gns3server.controller.configurations import selected_entry
+from gns3server.schemas.configurations import ConfigurationSet, Selection, StartupEntry
 from gns3server.services.configurations.sets import transaction
-from gns3server.services.configurations.sets.selections import SelectionStore, remap_nodes
+from gns3server.services.configurations.sets.selections import (
+    SelectionStore,
+    default_selection_changes,
+    remap_nodes,
+)
 from gns3server.services.configurations.sets.store import StartupStore
 from gns3server.services.configurations.shared.errors import ConfigurationError
 from tests.support.configurations import save_startup
@@ -48,3 +53,33 @@ def test_an_interrupted_remap_leaves_sets_and_choices_on_the_same_ids(tmp_path, 
 def test_selection_reference_is_unambiguous(kwargs):
     with pytest.raises(ValidationError):
         Selection(**kwargs)
+
+
+def test_editing_the_default_set_updates_node_choices_but_editing_another_set_does_not(tmp_path):
+    project = SimpleNamespace(path=str(tmp_path))
+    node = SimpleNamespace(id=str(uuid4()), project=project, node_type="vpcs", properties={})
+    store = StartupStore(project)
+    before = store.read()
+    assignments = SelectionStore(project)
+    assignments.assign(node.id, Selection(), 0)
+    entry = StartupEntry(device_type="vpcs", content="set pcname Saved\n", enabled=True)
+
+    def follow_default(previous, current):
+        value = assignments.selections()
+        changes = default_selection_changes(previous, current, value)
+        if changes:
+            assignments.assign_many(changes, value["revision"])
+
+    after = store.put_entry(before.selected, node.id, entry, revision=before.revision)
+    follow_default(before, after)
+    assert selected_entry(node) == (after.selected, entry)
+    selection = assignments.selections()
+    inactive = ConfigurationSet(name="Other", nodes={UUID(node.id): entry})
+    edited = after.model_copy(update={"sets": (*after.sets, inactive)})
+    follow_default(after, edited)
+    assert assignments.selections() == selection
+    disabled = store.put_entry(
+        after.selected, node.id, entry.model_copy(update={"enabled": False}), revision=after.revision
+    )
+    follow_default(after, disabled)
+    assert selected_entry(node) is None
