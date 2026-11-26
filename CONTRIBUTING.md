@@ -52,3 +52,11 @@ More information there: https://github.com/GNS3/cla
 ### Pull requests
 
 Creating a pull request is the easiest way to contribute code. Do not hesitate to create one early when  contributing for new feature in order to get our feedback.
+
+### Web UI static files
+
+The gns3-server and the [GNS3 Web UI](https://github.com/GNS3/gns3-web-ui/) are separate projects with separate pull requests.
+
+The web UI static files in `gns3server/static/web-ui/` are updated with the latest web-ui build only when a new version of gns3-server is released. Regular pull requests do not need to update these files, so please do not modify `gns3server/static/web-ui/` in your pull request.
+
+If your server change also needs a web UI change, submit a pull request in the gns3-web-ui repository.
