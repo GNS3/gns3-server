@@ -191,7 +191,7 @@ CAPACITIES = {
     "console-capture": 4,
 }
 
-_limits = WeakKeyDictionary()
+_limits: WeakKeyDictionary[asyncio.AbstractEventLoop, dict[str, asyncio.Semaphore]] = WeakKeyDictionary()
 
 
 def loop_limit(name: str) -> asyncio.Semaphore:

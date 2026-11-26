@@ -64,7 +64,8 @@ def build(project, set_id, revision=None) -> tuple[str, bytes]:
     document, selected = StartupStore(project).set(set_id)
     if revision is not None and document.revision != revision:
         raise ConfigurationError("startup_configurations_changed")
-    nodes, files = [], {}
+    nodes = []
+    files: dict[str, bytes] = {}
     for node_id, entry in selected.nodes.items():
         node = project.nodes.get(str(node_id))
         node_name = getattr(node, "name", "") if node is not None else ""
@@ -218,7 +219,7 @@ def resolve_targets(nodes_backend, request: ArchiveImport, manifest: ArchiveMani
     """
     claimed = {str(target) for target in request.nodes.values()}
     claimed |= {str(node.node_id) for node in manifest.nodes if str(node.node_id) in nodes_backend}
-    names = {}
+    names: dict[str, list[str]] = {}
     for node_id, node in nodes_backend.items():
         names.setdefault(getattr(node, "name", ""), []).append(node_id)
     mapped_away = {str(request.nodes[node.node_id]) for node in manifest.nodes if node.node_id in request.nodes}

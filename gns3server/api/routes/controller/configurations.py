@@ -285,7 +285,7 @@ async def wipe_nodes(
     # A wipe deletes the nodes' overlay disks, which the copies of a frozen template point at.
     project.check_mutable("wiping nodes")
     require_eligible_nodes(project, node_ids, eligible)
-    stopped = []
+    stopped: list[str] = []
     results = await wipe_configurations(project, node_ids, stopped=stopped)
     # "stopped" lists the nodes that were running and were stopped to be wiped.
     return {"nodes": results, "stopped": stopped}

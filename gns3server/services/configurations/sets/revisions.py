@@ -3,10 +3,12 @@
 import stat
 import threading
 from collections import OrderedDict
+from pathlib import Path
 
 from gns3server.services.configurations.shared.safe_io import linked
 
-_CACHE = OrderedDict()
+# Path -> (file identity, revision)
+_CACHE: OrderedDict[Path, tuple[tuple[int, ...], int]] = OrderedDict()
 _CACHE_LOCK = threading.Lock()
 _MAX_ENTRIES = 32
 

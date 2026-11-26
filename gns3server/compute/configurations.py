@@ -133,7 +133,7 @@ async def dynamips_query(node, operation: str) -> list[str]:
                 if lines[-1].startswith(b"100-"):
                     result = []
                     for line in lines:
-                        if len(line) < 4 or not line[:3].isdigit() or line[3:4] not in (b" ", b"-"):
+                        if len(line) < 4 or not line[:3].isdigit() or bytes(line[3:4]) not in (b" ", b"-"):
                             raise ConfigurationError("invalid_hypervisor_response")
                         value = line[4:].decode("utf-8")
                         if not (line.startswith(b"100-") and value == "OK"):
