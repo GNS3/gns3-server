@@ -12,6 +12,7 @@ from . import (
     cisco_iosxrv9k,
     cisco_nxosv9k,
     cisco_viptela,
+    paloalto_panos,
 )
 
 PROFILES: dict[str, BootMediaProfile] = {
@@ -24,6 +25,7 @@ PROFILES: dict[str, BootMediaProfile] = {
         cisco_iosxrv9k.PROFILE,
         cisco_nxosv9k.PROFILE,
         cisco_viptela.PROFILE,
+        paloalto_panos.PROFILE,
     )
 }
 

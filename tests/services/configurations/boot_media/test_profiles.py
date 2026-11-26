@@ -4,6 +4,7 @@ import base64
 import email
 import hashlib
 import json
+import re
 from email import policy
 
 import pytest
@@ -19,7 +20,7 @@ from gns3server.services.configurations.boot_media import (
 from gns3server.services.configurations.boot_media.profiles import cisco_c8000v_controller as controller
 from gns3server.services.configurations.boot_media.profiles import cisco_viptela
 from gns3server.services.configurations.shared.errors import ConfigurationError
-from gns3server.services.configurations.shared.password_hash import sha512_crypt
+from gns3server.services.configurations.shared.password_hash import sha256_crypt, sha512_crypt
 
 NODE = "7b4e1f5a-0c3e-4d58-9d2b-1f6f2f1f0a11"
 CONTEXT = MediaContext(node_id=NODE)
@@ -48,6 +49,12 @@ XR_LISTING = (
 ADMIN_HASH = "$6$salt1234$Zm9vYmFyYmF6UXV4.abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ab"
 WITH_ADMIN = f"system\n host-name x\n aaa\n  user admin\n   password {ADMIN_HASH}\n  !\n  user ops\n   password $6$o$h\n  !\n !\n!\n"
 NO_ADMIN = "system\n host-name x\n aaa\n  user ops\n   password $6$o$h\n   group netadmin\n  !\n !\n!\n"
+PANOS = (
+    '<config version="11.2.0"><mgt-config><users><entry name="admin"><phash>fnRL/G5lXVMug</phash><permissions>'
+    "<role-based><superuser>yes</superuser></role-based></permissions></entry></users></mgt-config>"
+    '<devices><entry name="localhost.localdomain"/></devices></config>'
+)
+PANOS_NO_USER = '<config version="11.2.0"><devices><entry name="localhost.localdomain"/></devices></config>'
 
 
 def test_registry_lists_the_supported_profiles():
@@ -59,6 +66,7 @@ def test_registry_lists_the_supported_profiles():
         "cisco-iosxrv9k",
         "cisco-nxosv9k",
         "cisco-viptela",
+        "paloalto-panos",
     }
     assert all(profile.id == key for key, profile in PROFILES.items())
     assert {entry["id"]: entry["device_type"] for entry in list_profiles()} == {
@@ -69,6 +77,7 @@ def test_registry_lists_the_supported_profiles():
         "cisco-iosxrv9k": "cisco_xr",
         "cisco-nxosv9k": "cisco_nxos",
         "cisco-viptela": "cisco_viptela",
+        "paloalto-panos": "paloalto_panos",
     }
     assert all(
         set(entry) == {"id", "title", "device_type", "description"} and entry["title"] for entry in list_profiles()
@@ -91,6 +100,16 @@ def test_a_profile_rejects_an_unsafe_volume_label():
 def test_every_profile_refuses_unusable_text(profile, content):
     with pytest.raises(ConfigurationError, match="configuration_invalid_content"):
         profile.files(content, CONTEXT)
+
+
+@pytest.mark.parametrize("profile", PROFILES.values(), ids=lambda profile: profile.id)
+def test_a_profile_never_returns_unsafe_file_names(profile):
+    samples = {"paloalto_panos": PANOS, "juniper_junos": "system {\n    host-name vsrx;\n}\n"}
+    files = profile.files(samples.get(profile.device_types[0], "hostname r1\nusername lab secret x\n"), CONTEXT)
+    # Paths are relative and stay inside the media (a profile may nest files, as a bootstrap package does).
+    assert files and all(
+        name.isascii() and not name.startswith((".", "/")) and ".." not in name.split("/") for name in files
+    )
 
 
 def test_profile_validation_rejects_unsafe_file_names():
@@ -416,6 +435,56 @@ def test_the_saved_password_is_used_only_when_it_is_one_printable_token(password
     assert plain_password(MediaContext(node_id=NODE, admin_password=password)) == (password if usable else None)
 
 
+def test_panos_delivers_a_bootstrap_package():
+    profile = get_profile("paloalto-panos")
+    files = profile.files(PANOS, CONTEXT)
+    assert set(files) == {"config/bootstrap.xml", "config/init-cfg.txt", "content/", "license/", "software/"}
+    assert files["config/bootstrap.xml"] == f'<?xml version="1.0"?>\n{PANOS}\n'.encode()
+    assert files["config/init-cfg.txt"] == b"type=dhcp-client\n" and not any(files[d] for d in files if d.endswith("/"))
+    assert (
+        profile.device_types == ("paloalto_panos",) and profile.media == "cdrom" and profile.volume_label == "PAN_BOOT"
+    )
+
+
+def test_panos_accepts_the_cli_envelope_and_a_declaration_and_strips_them():
+    profile = get_profile("paloalto-panos")
+    wrapped = f'<response status="success"><result>{PANOS}</result></response>'
+    declared = f'<?xml version="1.0"?>\r\n{PANOS}\r\n'
+    expected = f'<?xml version="1.0"?>\n{PANOS}\n'.encode()
+    assert profile.files(wrapped, CONTEXT)["config/bootstrap.xml"] == expected
+    assert profile.files(declared, CONTEXT)["config/bootstrap.xml"] == expected
+
+
+def test_panos_without_a_usable_user_gets_the_saved_password_as_a_superuser():
+    profile = get_profile("paloalto-panos")
+    password = MediaContext(node_id="n", admin_password="Palo1234")
+    for text in (PANOS_NO_USER, PANOS.replace("fnRL/G5lXVMug", "")):
+        xml = profile.files(text, password)["config/bootstrap.xml"].decode()
+        assert '<entry name="admin">' in xml and "<superuser>yes</superuser>" in xml and "Palo1234" not in xml
+        phash = re.search(r"<phash>(\$5\$[./0-9A-Za-z]{1,16}\$[./0-9A-Za-z]{43})</phash>", xml)
+        assert phash and xml.count('<entry name="admin">') == 1
+        assert phash[1] == sha256_crypt("Palo1234", phash[1].split("$")[2])
+    # No saved password: the text is delivered as it is, never given an invented account.
+    assert (
+        get_profile("paloalto-panos").files(PANOS_NO_USER, CONTEXT)["config/bootstrap.xml"].decode().count("admin") == 0
+    )
+
+
+def test_panos_keeps_the_users_of_a_captured_configuration():
+    password = MediaContext(node_id="n", admin_password="Palo1234")
+    xml = get_profile("paloalto-panos").files(PANOS, password)["config/bootstrap.xml"].decode()
+    assert "fnRL/G5lXVMug" in xml and "$5$" not in xml
+
+
+@pytest.mark.parametrize(
+    "text",
+    ["", "   ", "hostname r1", "<config>", "<other/>", '<!DOCTYPE config [<!ENTITY x "y">]><config>&x;</config>'],
+)
+def test_panos_refuses_text_that_is_not_a_config_document(text):
+    with pytest.raises(ConfigurationError, match="configuration_invalid_content"):
+        get_profile("paloalto-panos").files(text, CONTEXT)
+
+
 def test_media_paths_may_be_nested_and_directories_are_empty():
     from gns3server.services.configurations.boot_media.media_profile import valid_entry
 
@@ -423,3 +492,47 @@ def test_media_paths_may_be_nested_and_directories_are_empty():
     assert not valid_entry("license/", b"x") and not valid_entry("config/x", b"")
     for bad in ("../x", "/abs", "a//b", "a/../b", ".hidden", "a/b/c/d/e/f", ""):
         assert not valid_entry(bad, b"x")
+
+
+def panos_init_cfg(system="", extra=""):
+    text = f'<config version="11.2.0"><devices><entry name="localhost.localdomain"><deviceconfig>{system}</deviceconfig>{extra}</entry></devices></config>'
+    return get_profile("paloalto-panos").files(text, CONTEXT)["config/init-cfg.txt"].decode().split()
+
+
+def test_panos_init_cfg_follows_the_management_settings_of_the_configuration():
+    assert panos_init_cfg() == ["type=dhcp-client"]
+    assert panos_init_cfg("<system><type><dhcp-client/></type></system>") == ["type=dhcp-client"]
+    static = (
+        "<system><ip-address>10.0.0.5</ip-address><netmask>255.255.255.0</netmask>"
+        "<default-gateway>10.0.0.1</default-gateway><ipv6-address>2001:db8::5/64</ipv6-address></system>"
+    )
+    assert panos_init_cfg(static) == [
+        "type=static",
+        "ip-address=10.0.0.5",
+        "netmask=255.255.255.0",
+        "default-gateway=10.0.0.1",
+        "ipv6-address=2001:db8::5/64",
+    ]
+
+
+@pytest.mark.parametrize(
+    "system",
+    [
+        "<system><ip-address>10.0.0.5</ip-address><netmask>255.255.255.0</netmask></system>",
+        "<system><ip-address>nope</ip-address><netmask>255.255.255.0</netmask><default-gateway>10.0.0.1</default-gateway></system>",
+        "<system><ip-address>10.0.0.5</ip-address><netmask>255.0.255.0</netmask><default-gateway>10.0.0.1</default-gateway></system>",
+        "<system><type><static/></type></system>",
+    ],
+)
+def test_panos_refuses_an_unusable_static_management_address(system):
+    with pytest.raises(ConfigurationError, match="configuration_invalid_content"):
+        panos_init_cfg(system)
+
+
+def test_panos_init_cfg_declares_the_operational_modes_the_configuration_needs():
+    jumbo = '<network><interface><ethernet><entry name="ethernet1/1"><layer3><mtu>9216</mtu></layer3></entry></ethernet></interface></network>'
+    assert panos_init_cfg(extra=jumbo) == ["type=dhcp-client", "op-command-modes=jumbo-frame"]
+    ordinary = jumbo.replace("9216", "1500")
+    assert panos_init_cfg(extra=ordinary) == ["type=dhcp-client"]
+    routing = "<setting><advanced-routing>yes</advanced-routing></setting>"
+    assert panos_init_cfg(routing) == ["type=dhcp-client", "plugin-op-commands=advance-routing:enable"]
