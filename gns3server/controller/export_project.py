@@ -24,6 +24,11 @@ from datetime import datetime
 
 import aiofiles
 
+from gns3server.services.configurations.boot_media.staging import WORKDIR_PREFIX
+from gns3server.services.configurations.sets.store import StartupStore, store_lock
+from gns3server.services.configurations.sets.transaction import JOURNAL, recover
+from gns3server.services.configurations.shared.safe_io import MAX_JSON_BYTES, run_file_io, stable_read
+
 from .controller_error import ControllerError, ControllerNotFoundError, ControllerTimeoutError
 
 log = logging.getLogger(__name__)
@@ -81,12 +86,32 @@ async def export_project(
                 reset_mac_addresses,
             )
 
+    # ZipStream opens paths later, so capture both startup manifests under one
+    # lock and pass their bytes rather than paths to the stream.
+    store = StartupStore(project)
+    startup_paths = (store.path, store.root / "nodes" / "selections.json")
+    startup_names = {os.path.relpath(path, project._path) for path in (*startup_paths, store.root / JOURNAL)}
+
+    def snapshot():
+        with store_lock(project):
+            recover(store.root)
+            return [
+                (os.path.relpath(path, project._path), stable_read(str(store.root), path, MAX_JSON_BYTES))
+                for path in startup_paths
+                if path.exists() or path.is_symlink()
+            ]
+
+    for name, content in await run_file_io(snapshot):
+        zstream.writestr(name, content)
+
     # Export the local files
     for root, dirs, files in os.walk(project._path, topdown=True, followlinks=False):
         try:
             files = [f for f in files if _is_exportable(os.path.join(root, f), include_snapshots)]
             for file in files:
                 path = os.path.join(root, file)
+                if os.path.relpath(path, project._path) in startup_names:
+                    continue
                 if not os.path.islink(path):
                     try:
                         # check if we can export the file
@@ -119,6 +144,8 @@ async def export_project(
         if compute.id != "local":
             compute_files = await compute.list_files(project)
             for compute_file in compute_files:
+                if os.path.normpath(compute_file["path"]) in startup_names:
+                    continue
                 if _is_exportable(compute_file["path"], include_snapshots):
                     log.debug("Downloading file '{}' from compute '{}'".format(compute_file["path"], compute.id))
                     response = await compute.download_file(project, compute_file["path"])
@@ -183,6 +210,14 @@ def _is_exportable(path, include_snapshots=False):
             return False
     except (ValueError, IndexError):
         pass
+
+    # Work files of an interrupted boot media preparation: they can hold a multi-GB copy of a disk.
+    if any(part.startswith((WORKDIR_PREFIX, ".disk-copy-")) for part in os.path.normpath(path).split(os.path.sep)):
+        return False
+
+    # ASAv recovery logs: diagnostics of a one-off erase, rebuilt on demand.
+    if ".asav-recovery" in os.path.normpath(path).split(os.path.sep):
+        return False
 
     # do not export log files and OS noise
     filename = os.path.basename(path)
