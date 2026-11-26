@@ -17,7 +17,9 @@ from gns3server.services.configurations.boot_media import (
     list_profiles,
 )
 from gns3server.services.configurations.boot_media.profiles import cisco_c8000v_controller as controller
+from gns3server.services.configurations.boot_media.profiles import cisco_viptela
 from gns3server.services.configurations.shared.errors import ConfigurationError
+from gns3server.services.configurations.shared.password_hash import sha512_crypt
 
 NODE = "7b4e1f5a-0c3e-4d58-9d2b-1f6f2f1f0a11"
 CONTEXT = MediaContext(node_id=NODE)
@@ -43,6 +45,9 @@ XR_LISTING = (
     "!! IOS XR Configuration 26.1.1\nhostname XR1\n"
     "username lab\n group root-lr\n group cisco-support\n secret 10 $6$abc$def\n!\nend\n"
 )
+ADMIN_HASH = "$6$salt1234$Zm9vYmFyYmF6UXV4.abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ab"
+WITH_ADMIN = f"system\n host-name x\n aaa\n  user admin\n   password {ADMIN_HASH}\n  !\n  user ops\n   password $6$o$h\n  !\n !\n!\n"
+NO_ADMIN = "system\n host-name x\n aaa\n  user ops\n   password $6$o$h\n   group netadmin\n  !\n !\n!\n"
 
 
 def test_registry_lists_the_supported_profiles():
@@ -53,6 +58,7 @@ def test_registry_lists_the_supported_profiles():
         "cisco-iosv",
         "cisco-iosxrv9k",
         "cisco-nxosv9k",
+        "cisco-viptela",
     }
     assert all(profile.id == key for key, profile in PROFILES.items())
     assert {entry["id"]: entry["device_type"] for entry in list_profiles()} == {
@@ -62,6 +68,7 @@ def test_registry_lists_the_supported_profiles():
         "cisco-iosv": "cisco_ios_telnet",
         "cisco-iosxrv9k": "cisco_xr",
         "cisco-nxosv9k": "cisco_nxos",
+        "cisco-viptela": "cisco_viptela",
     }
     assert all(
         set(entry) == {"id", "title", "device_type", "description"} and entry["title"] for entry in list_profiles()
@@ -257,6 +264,79 @@ def test_missing_system_values_get_lab_placeholders():
     assert {"vbond": controller.DEFAULT_VBOND} in parameters and {"org": controller.DEFAULT_ORG} in parameters
 
 
+def test_viptela_media_is_a_nocloud_seed_with_a_loader():
+    profile = get_profile("cisco-viptela")
+    config = "system\n host-name vsmart1\n site-id 100\n!\n"
+    files = profile.files(config, CONTEXT)
+    assert profile.volume_label == "cidata" and set(files) == {"user-data", "meta-data"}
+    assert files["meta-data"] == f"instance-id: gns3-{NODE}\n".encode()
+    assert files["user-data"].startswith(b"#cloud-config\n")
+    document = yaml.safe_load(files["user-data"])
+    written = {entry["path"]: entry for entry in document["write_files"]}
+    startup = written[f"{cisco_viptela.ROOT}/startup.cfg"]
+    assert startup["encoding"] == "b64" and base64.b64decode(startup["content"]).decode() == config
+    assert base64.b64decode(written[f"{cisco_viptela.ROOT}/load.sh"]["content"]).decode() == cisco_viptela.LOADER
+    assert json.dumps(document["runcmd"]).count("load.sh") == 1
+    assert "confd_load -l -m -F c" in cisco_viptela.LOADER
+    # No vpn sections in the text: the factory vpns are left alone.
+    assert f"{cisco_viptela.ROOT}/replace-vpn" not in written
+
+
+def test_a_text_that_defines_vpns_replaces_the_factory_ones_in_one_transaction():
+    text = "system\n host-name x\n!\nvpn 0\n interface eth1\n  no shutdown\n !\n!\nvpn 512\n!\n"
+    files = get_profile("cisco-viptela").files(text, CONTEXT)
+    paths = {entry["path"] for entry in yaml.safe_load(files["user-data"])["write_files"]}
+    assert f"{cisco_viptela.ROOT}/replace-vpn" in paths
+    assert 'scope="-p /vpn"' in cisco_viptela.LOADER
+    # Indented "vpn" words inside other sections are not vpn sections.
+    assert not cisco_viptela.defines_vpns("snmp\n trap target vpn 512 10.0.0.1 162\n!\n")
+    assert cisco_viptela.defines_vpns(text)
+
+
+def test_the_loader_retries_early_boot_errors_and_reports_failures_on_the_console():
+    loader = cisco_viptela.LOADER
+    # Transient ConfD helper errors (the real symptom was a usmentry write error) are retried...
+    assert "usmentry" in loader and "sleep 10" in loader and "-lt 40" in loader
+    # ...anything else is final, and both outcomes are printed unmistakably.
+    assert "console 'GNS3: startup configuration applied.'" in loader
+    assert 'console "GNS3: startup configuration FAILED:' in loader
+    assert "<hash>" in loader  # encrypted values never reach the console
+
+
+def test_viptela_account_password_hashes_are_delivered_byte_for_byte():
+    # The config's own `aaa user` hashes become the login; they must not be altered.
+    text = "system\n aaa\n  user admin\n   password $6$abcdefgh$Zm9v/YmFy.KQ0\n  !\n !\n!\n"
+    files = get_profile("cisco-viptela").files(text, CONTEXT)
+    startup = next(e for e in yaml.safe_load(files["user-data"])["write_files"] if e["path"].endswith("startup.cfg"))
+    assert base64.b64decode(startup["content"]).decode() == text
+
+
+def initial_admin_cfg(text, password=None):
+    from gns3server.services.configurations.boot_media import MediaContext as Context
+
+    files = get_profile("cisco-viptela").files(text, Context(node_id=NODE, admin_password=password))
+    written = {e["path"]: e for e in yaml.safe_load(files["user-data"])["write_files"]}
+    entry = written.get(f"{cisco_viptela.ROOT}/initial-admin.cfg")
+    return base64.b64decode(entry["content"]).decode() if entry else None, files
+
+
+def test_the_texts_own_admin_hash_is_loaded_first_and_wins_over_the_node_password():
+    config, files = initial_admin_cfg(WITH_ADMIN, "NodePassword1")
+    assert config == f"system\n aaa\n  user admin\n   password {ADMIN_HASH}\n  !\n !\n!\n"
+    assert "NodePassword1" not in files["user-data"].decode()
+
+
+def test_the_node_password_is_hashed_here_when_the_text_has_no_admin():
+    config, files = initial_admin_cfg(NO_ADMIN, "NodePassword1")
+    value = config.split("password ")[1].split("\n")[0]
+    assert value.startswith("$6$") and len(value.split("$")[2]) == 16
+    assert value == sha512_crypt("NodePassword1", value.split("$")[2])
+    # Only a hash ever reaches the media; other aaa users are not part of the account step.
+    assert "NodePassword1" not in files["user-data"].decode() and "ops" not in config
+    # Deterministic for a node: same node, same password, same media.
+    assert initial_admin_cfg(NO_ADMIN, "NodePassword1")[1] == files
+
+
 def test_the_context_never_shows_the_password():
     assert "secret" not in repr(MediaContext(node_id=NODE, admin_password="secret"))
 
@@ -279,7 +359,7 @@ def test_system_values_are_read_like_the_cli_prints_them(line, vbond, org):
         assert f" - org : {json.dumps(org)}\n" in payload
 
 
-@pytest.mark.parametrize("profile", [controller.PROFILE], ids=lambda profile: profile.id)
+@pytest.mark.parametrize("profile", [controller.PROFILE, cisco_viptela.PROFILE], ids=lambda profile: profile.id)
 def test_parsed_crlf_text_is_delivered_with_lf_line_endings(profile):
     files = profile.files(
         "username lab secret x\r\nsystem\r\n host-name r1\r\n vbond 10.0.0.1\r\n!\r\nvpn 0\r\n!\r\n", CONTEXT
@@ -291,6 +371,18 @@ def test_parsed_crlf_text_is_delivered_with_lf_line_endings(profile):
             else data
         )
         assert b"\r" not in data
+
+
+def test_a_plaintext_admin_password_is_kept_out_of_the_merged_configuration():
+    text = "system\n host-name a\n aaa\n  user admin\n   password plaintext\n  !\n !\n!\n"
+    for password in (None, "Saved-Pass-1"):
+        files = cisco_viptela.PROFILE.files(text, MediaContext(node_id=NODE, admin_password=password))
+        document = json.loads(files["user-data"].split(b"\n", 1)[1])
+        by_name = {
+            entry["path"].rsplit("/", 1)[1]: base64.b64decode(entry["content"]) for entry in document["write_files"]
+        }
+        assert b"plaintext" not in by_name["startup.cfg"] and b"host-name a" in by_name["startup.cfg"]
+        assert ("initial-admin.cfg" in by_name) is bool(password)
 
 
 def test_controller_text_keeps_its_own_users_and_a_manager_bootstrap_is_never_modified():
