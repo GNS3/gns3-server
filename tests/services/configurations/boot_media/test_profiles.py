@@ -2,11 +2,30 @@
 
 import pytest
 
-from gns3server.services.configurations.boot_media import BootMediaProfile, MediaContext, get_profile
+from gns3server.services.configurations.boot_media import (
+    PROFILES,
+    BootMediaProfile,
+    MediaContext,
+    get_profile,
+    list_profiles,
+)
 from gns3server.services.configurations.shared.errors import ConfigurationError
 
 NODE = "7b4e1f5a-0c3e-4d58-9d2b-1f6f2f1f0a11"
 CONTEXT = MediaContext(node_id=NODE)
+
+
+def test_registry_lists_the_supported_profiles():
+    assert set(PROFILES) == {
+        "cisco-c8000v-autonomous",
+    }
+    assert all(profile.id == key for key, profile in PROFILES.items())
+    assert {entry["id"]: entry["device_type"] for entry in list_profiles()} == {
+        "cisco-c8000v-autonomous": "cisco_ios_telnet",
+    }
+    assert all(
+        set(entry) == {"id", "title", "device_type", "description"} and entry["title"] for entry in list_profiles()
+    )
 
 
 @pytest.mark.parametrize("unknown", ["nope", "", None, 7])
@@ -20,10 +39,32 @@ def test_a_profile_rejects_an_unsafe_volume_label():
         BootMediaProfile("x", "X", "x", ("cisco_ios_telnet",), "bad label; rm", lambda content, context: {})
 
 
+@pytest.mark.parametrize("profile", PROFILES.values(), ids=lambda profile: profile.id)
+@pytest.mark.parametrize("content", ["", "   \n\t", "hostname a\x00b\n", "x" * (2 * 1024 * 1024 + 1)])
+def test_every_profile_refuses_unusable_text(profile, content):
+    with pytest.raises(ConfigurationError, match="configuration_invalid_content"):
+        profile.files(content, CONTEXT)
+
+
 def test_profile_validation_rejects_unsafe_file_names():
     broken = BootMediaProfile("y", "Y", "y", ("cisco_ios_telnet",), "L", lambda content, context: {"../x": b"1"})
     with pytest.raises(ConfigurationError, match="configuration_invalid_content"):
         broken.files("hostname r1\n", CONTEXT)
+
+
+@pytest.mark.parametrize(
+    "profile_id,text",
+    [
+        ("cisco-c8000v-autonomous", "hostname R1\r\ninterface Gi1\r\n ip address 10.0.0.1 255.255.255.0\r\nend\r\n"),
+    ],
+    ids=["c8000v-autonomous"],
+)
+def test_ios_xe_profiles_store_the_text_unchanged_as_iosxe_config(profile_id, text):
+    profile = get_profile(profile_id)
+    assert profile.files(text, CONTEXT) == {"iosxe_config.txt": text.encode()}
+    assert profile.volume_label == "GNS3_BOOT"
+    assert profile.media == "cdrom"
+    assert profile.device_types == ("cisco_ios_telnet",)
 
 
 def test_the_context_never_shows_the_password():

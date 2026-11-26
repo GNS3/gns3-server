@@ -4,8 +4,11 @@ from gns3server.schemas.configurations import normalize_device_type
 from gns3server.services.configurations.shared.errors import ConfigurationError
 
 from ..media_profile import BootMediaProfile
+from . import (
+    cisco_c8000v_autonomous,
+)
 
-PROFILES: dict[str, BootMediaProfile] = {profile.id: profile for profile in ()}
+PROFILES: dict[str, BootMediaProfile] = {profile.id: profile for profile in (cisco_c8000v_autonomous.PROFILE,)}
 
 
 def get_profile(profile_id) -> BootMediaProfile:
