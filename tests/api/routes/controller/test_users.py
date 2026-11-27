@@ -25,10 +25,12 @@ from httpx import AsyncClient
 from joserfc import jwt
 from joserfc.jwk import OctKey
 from sqlalchemy import update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import gns3server.db.models as models
 from gns3server.config import Config
+from gns3server.db.models.users import user_group_map
 from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.db.repositories.users import UsersRepository
 from gns3server.schemas.controller.rbac import ACECreate, RoleCreate
@@ -55,6 +57,7 @@ class TestUserRoutes:
         }
         response = await client.post(app.url_path_for("create_user"), json=new_user)
         assert response.status_code == status.HTTP_201_CREATED
+        assert response.json()["auth_source"] == "local"
 
     async def test_create_user_requires_a_user_group(self, app: FastAPI, client: AsyncClient) -> None:
 
@@ -233,13 +236,99 @@ class TestUserRoutes:
         assert user_in_db.hashed_password != new_user["password"]
         assert auth_service.verify_password(new_user["password"], user_in_db.hashed_password)
 
+    async def test_exact_username_lookup_distinguishes_case(
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession, users_group_id: str
+    ) -> None:
+        """
+        Verify that get_user_by_username preserves exact case-sensitive lookup
+        so that distinct accounts such as 'case_user' and 'Case_User' do not collide.
+        """
+        user_repo = UsersRepository(db_session)
+        user_lower = await user_repo.create_user(
+            UserCreate(
+                username="case_user",
+                email="case_lower@example.com",
+                password="placeholder_password",
+                user_group_id=users_group_id,
+            )
+        )
+        try:
+            # Simulate legacy database row
+            user_upper = models.User(
+                username="Case_User",
+                email="case_upper@example.com",
+                hashed_password=auth_service.hash_password("placeholder_password"),
+            )
+            db_session.add(user_upper)
+            await db_session.flush()
+            await db_session.execute(
+                user_group_map.insert().values(user_id=user_upper.user_id, user_group_id=uuid.UUID(users_group_id))
+            )
+            await db_session.commit()
+
+            try:
+                found_lower = await user_repo.get_user_by_username("case_user")
+                found_upper = await user_repo.get_user_by_username("Case_User")
+
+                assert found_lower is not None and str(found_lower.user_id) == str(user_lower.user_id)
+                assert found_upper is not None and str(found_upper.user_id) == str(user_upper.user_id)
+                assert found_lower.username == "case_user"
+                assert found_upper.username == "Case_User"
+            finally:
+                await user_repo.delete_user(user_upper.user_id)
+        finally:
+            await user_repo.delete_user(user_lower.user_id)
+
+    async def test_create_user_case_insensitive_collision_rejected(
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession, users_group_id: str
+    ) -> None:
+        """
+        Verify that creating a user with a username differing only in letter case is rejected.
+        """
+        user_repo = UsersRepository(db_session)
+        user1 = await user_repo.create_user(
+            UserCreate(
+                username="unique_case_user",
+                email="case1@example.com",
+                password="placeholder_password",
+                user_group_id=users_group_id,
+            )
+        )
+        try:
+            with pytest.raises(IntegrityError):
+                await user_repo.create_user(
+                    UserCreate(
+                        username="Unique_Case_User",
+                        email="case2@example.com",
+                        password="placeholder_password",
+                        user_group_id=users_group_id,
+                    )
+                )
+
+            # Also verify via HTTP API route
+            resp = await client.post(
+                app.url_path_for("create_user"),
+                json={
+                    "username": "UNIQUE_CASE_USER",
+                    "email": "case3@example.com",
+                    "password": "placeholder_password",
+                    "user_group_id": users_group_id,
+                },
+            )
+            assert resp.status_code == status.HTTP_400_BAD_REQUEST
+            assert "already registered" in resp.json()["message"]
+        finally:
+            await user_repo.delete_user(user1.user_id)
+
     async def test_get_users(self, app: FastAPI, client: AsyncClient) -> None:
 
         response = await client.get(app.url_path_for("get_users"))
         assert response.status_code == status.HTTP_200_OK
+        users = response.json()
         # admin, user1, user2, user3 and the two users created by the update
         # tests above should exist
-        assert len(response.json()) == 6
+        assert len(users) == 6
+        assert all(u["auth_source"] == "local" for u in users)
 
     async def test_delete_user_removes_ace_on_user_path(
         self, app: FastAPI, client: AsyncClient, db_session: AsyncSession, users_group_id: str

@@ -246,6 +246,19 @@ class Server:
             timeout_graceful_shutdown=GRACEFUL_SHUTDOWN_TIMEOUT,
         )
 
+    @staticmethod
+    def _check_security_warnings(config) -> None:
+        """
+        Emit security warnings for potentially insecure server configurations.
+        """
+
+        if config.LDAP.enabled and not config.Server.enable_ssl:
+            log.warning(
+                "SECURITY WARNING: LDAP authentication is active over unencrypted HTTP. "
+                "Domain credentials will be transmitted in plaintext across the network unless "
+                "GNS3 is fronted by an HTTPS reverse proxy (e.g. Nginx, Caddy)."
+            )
+
     async def run(self, parser, args):
 
         self._setup_logging(args)
@@ -278,6 +291,8 @@ class Server:
             )
         else:
             log.info(f"Compute authentication is enabled with username '{config.Server.compute_username}'")
+
+        self._check_security_warnings(config)
 
         # we only support Python 3 version >= 3.11
         if sys.version_info < (3, 11, 0):

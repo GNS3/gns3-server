@@ -14,9 +14,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import json
 import socket
 from enum import StrEnum
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, DirectoryPath, Field, FilePath, SecretStr, field_validator, model_validator
 
@@ -45,6 +46,66 @@ class ControllerSettings(BaseModel):
         "changing it has no effect until the database is re-created (which resets the account)",
     )
     model_config = ConfigDict(validate_assignment=True, str_strip_whitespace=True)
+
+
+class LDAPSettings(BaseModel):
+    enabled: bool = Field(False, description="Enable LDAP/Active Directory authentication")
+    uri: str = Field(
+        "ldap://localhost:389",
+        description="LDAP server URI (e.g. ldap://localhost:389 or ldaps://ldap.example.com:636)",
+    )
+    bind_dn: Optional[str] = Field(None, description="Distinguished Name (DN) to bind as for search operations")
+    bind_password: Optional[SecretStr] = Field(None, description="Password for the bind DN")
+    base_dn: str = Field("", description="Base DN for user search (e.g. ou=users,dc=example,dc=com)")
+    user_search_filter: str = Field(
+        "(&(objectClass=person)(|(uid={username})(sAMAccountName={username})))",
+        description="Search filter template to locate users ({username} is replaced by the sanitized login username)",
+    )
+    user_attr_username: str = Field("uid", description="LDAP attribute for username")
+    user_attr_email: str = Field("mail", description="LDAP attribute for user email")
+    user_attr_fullname: str = Field("cn", description="LDAP attribute for user full name")
+    group_search_base: Optional[str] = Field(
+        None, description="Base DN for searching groups (defaults to base_dn if empty)"
+    )
+    group_search_filter: str = Field(
+        "(&(objectClass=groupOfNames)(member={user_dn}))",
+        description="Search filter template for user group memberships ({user_dn} and {username} are replaced)",
+    )
+    group_mapping: Dict[str, str] = Field(
+        default_factory=dict,
+        description="Map of LDAP Group DN/Name to GNS3 UserGroup (e.g. {'GNS3-Admins': 'Administrators'})",
+    )
+    default_group: str = Field("Users", description="Default GNS3 UserGroup assigned to provisioned users")
+    start_tls: bool = Field(False, description="Use StartTLS on cleartext connection")
+    verify_cert: bool = Field(True, description="Verify SSL/TLS certificate when connecting via LDAPS or StartTLS")
+    ca_cert_file: Optional[str] = Field(None, description="Path to CA certificate file for TLS validation")
+    fallback_to_local: bool = Field(
+        True, description="Allow local database login if LDAP fails or user is not found in LDAP"
+    )
+    timeout: int = Field(10, ge=1, le=120, description="Network timeout in seconds for LDAP operations")
+    model_config = ConfigDict(validate_assignment=True, str_strip_whitespace=True)
+
+    @field_validator("group_mapping", mode="before")
+    @classmethod
+    def parse_group_mapping(cls, v):
+        if isinstance(v, str):
+            v = v.strip()
+            if not v:
+                return {}
+            try:
+                parsed = json.loads(v)
+                if isinstance(parsed, dict):
+                    return parsed
+            except Exception:
+                res = {}
+                for item in v.split(","):
+                    if ":" in item:
+                        k, val = item.split(":", 1)
+                        res[k.strip()] = val.strip()
+                return res
+        if isinstance(v, dict):
+            return v
+        return {}
 
 
 class VPCSSettings(BaseModel):
@@ -373,6 +434,7 @@ class ServerSettings(BaseModel):
 class ServerConfig(BaseModel):
     Server: ServerSettings = ServerSettings()
     Controller: ControllerSettings = ControllerSettings()
+    LDAP: LDAPSettings = LDAPSettings()
     VPCS: VPCSSettings = VPCSSettings()
     Dynamips: DynamipsSettings = DynamipsSettings()
     IOU: IOUSettings = IOUSettings()

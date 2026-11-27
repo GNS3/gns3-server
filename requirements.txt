@@ -1,6 +1,6 @@
 # GNS3 Server Core Dependencies
 uvicorn==0.54.0
-pydantic==2.14.2
+pydantic==2.14.4
 fastapi==0.162.0
 python-multipart==0.0.33
 websockets==17.4
@@ -15,11 +15,12 @@ sqlalchemy[asyncio]==2.1.8
 aiosqlite==0.22.1
 alembic==1.20.1
 bcrypt==5.0.0
-joserfc==1.7.7
+joserfc==1.8.0
+ldap3==2.9.1
 email-validator==2.3.0
 watchdog==6.0.0 # upgrading to v7.0.0 creates issues
 zstandard==0.25.0
-platformdirs>=4.14.2
+platformdirs>=4.14.8
 truststore>=0.10.5
 
 # Shared dependencies (also used by AI Copilot)

@@ -26,7 +26,7 @@ a secret leak at worst.
 """
 
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -35,6 +35,7 @@ from ..config import (
     ControllerSettings,
     DynamipsSettings,
     IOUSettings,
+    LDAPSettings,
     QemuKvmclock,
     QemuSettings,
     ServerProtocol,
@@ -84,9 +85,14 @@ class IOUSettingsResponse(IOUSettings):
     )
 
 
+class LDAPSettingsResponse(LDAPSettings):
+    pass
+
+
 class SettingsResponse(BaseModel):
     Server: ServerSettingsResponse
     Controller: ControllerSettingsResponse
+    LDAP: LDAPSettingsResponse
     VPCS: VPCSSettings
     Dynamips: DynamipsSettings
     IOU: IOUSettingsResponse
@@ -212,11 +218,35 @@ class WebWiresharkSettingsUpdate(BaseModel):
     pids_limit: Optional[int] = None
 
 
+class LDAPSettingsUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    enabled: Optional[bool] = None
+    uri: Optional[str] = None
+    bind_dn: Optional[str] = None
+    bind_password: Optional[str] = None
+    base_dn: Optional[str] = None
+    user_search_filter: Optional[str] = None
+    user_attr_username: Optional[str] = None
+    user_attr_email: Optional[str] = None
+    user_attr_fullname: Optional[str] = None
+    group_search_base: Optional[str] = None
+    group_search_filter: Optional[str] = None
+    group_mapping: Optional[Dict[str, str]] = None
+    default_group: Optional[str] = None
+    start_tls: Optional[bool] = None
+    verify_cert: Optional[bool] = None
+    ca_cert_file: Optional[str] = None
+    fallback_to_local: Optional[bool] = None
+    timeout: Optional[int] = Field(None, ge=1, le=120)
+
+
 class SettingsUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     Server: Optional[ServerSettingsUpdate] = None
     Controller: Optional[ControllerSettingsUpdate] = None
+    LDAP: Optional[LDAPSettingsUpdate] = None
     VPCS: Optional[VPCSSettingsUpdate] = None
     Dynamips: Optional[DynamipsSettingsUpdate] = None
     IOU: Optional[IOUSettingsUpdate] = None
@@ -229,3 +259,12 @@ class SettingsUpdateResponse(SettingsResponse):
         default_factory=list,
         description="Changed 'Section.option' settings that require a server restart to take effect",
     )
+
+
+class LDAPTestConnectionResponse(BaseModel):
+    status: str = Field(description="Result status ('success' or 'error')")
+    bind_successful: bool = Field(description="Whether binding to the LDAP server succeeded")
+    user_search_successful: bool = Field(description="Whether user search query executed successfully")
+    users_found: int = Field(0, description="Number of user entries found during canary search")
+    latency_ms: float = Field(description="Round-trip latency in milliseconds")
+    message: str = Field(description="Diagnostic outcome or error message")

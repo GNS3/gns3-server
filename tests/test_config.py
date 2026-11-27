@@ -265,3 +265,46 @@ def test_reload_and_notify(tmpdir):
 
     assert config.settings.Server.host == "192.168.1.2"
     assert notified == [True]
+
+
+def test_ldap_settings_defaults():
+    config = ServerConfig()
+    assert config.LDAP.enabled is False
+    assert config.LDAP.uri == "ldap://localhost:389"
+    assert config.LDAP.bind_dn is None
+    assert config.LDAP.bind_password is None
+    assert config.LDAP.base_dn == ""
+    assert config.LDAP.default_group == "Users"
+    assert config.LDAP.fallback_to_local is True
+    assert config.LDAP.start_tls is False
+    assert config.LDAP.verify_cert is True
+    assert config.LDAP.timeout == 10
+    assert config.LDAP.group_mapping == {}
+
+
+def test_ldap_settings_password_masking():
+    config = ServerConfig(LDAP={"bind_password": "placeholder_password"})
+    assert str(config.LDAP.bind_password) == "**********"
+    assert config.LDAP.bind_password.get_secret_value() == "placeholder_password"
+
+
+def test_ldap_group_mapping_parsing():
+    # JSON string
+    config_json = ServerConfig(LDAP={"group_mapping": '{"Admins": "Administrators", "Devs": "Users"}'})
+    assert config_json.LDAP.group_mapping == {"Admins": "Administrators", "Devs": "Users"}
+
+    # Comma-separated key:value string
+    config_csv = ServerConfig(LDAP={"group_mapping": "Admins:Administrators, Devs:Users"})
+    assert config_csv.LDAP.group_mapping == {"Admins": "Administrators", "Devs": "Users"}
+
+    # Empty string
+    config_empty = ServerConfig(LDAP={"group_mapping": "   "})
+    assert config_empty.LDAP.group_mapping == {}
+
+
+def test_ldap_settings_timeout_validation():
+    with pytest.raises(ValidationError):
+        ServerConfig(LDAP={"timeout": 0})
+
+    with pytest.raises(ValidationError):
+        ServerConfig(LDAP={"timeout": 150})

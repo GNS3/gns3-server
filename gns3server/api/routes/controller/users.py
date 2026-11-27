@@ -40,6 +40,7 @@ from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.db.repositories.users import UsersRepository
 from gns3server.db.user_quota_state import UserQuotaState
 from gns3server.services import auth_service
+from gns3server.services.login_rate_limiter import login_rate_limiter
 
 from .dependencies.authentication import get_current_active_user
 from .dependencies.database import get_repository
@@ -56,6 +57,7 @@ MAX_PREFERENCES_SIZE_BYTES = 256 * 1024
 
 @router.post("/login", response_model=schemas.Token)
 async def login(
+    request: Request,
     users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
     form_data: OAuth2PasswordRequestForm = Depends(),
 ) -> schemas.Token:
@@ -64,19 +66,31 @@ async def login(
     Example: curl -X POST http://host:port/v3/access/users/login -H "Content-Type: application/x-www-form-urlencoded" -d "username=admin&password=admin"
     """
 
+    client_ip = request.client.host if request.client else "127.0.0.1"
+    is_limited, retry_after = login_rate_limiter.is_rate_limited(form_data.username, client_ip)
+    if is_limited:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many failed login attempts. Please try again later.",
+            headers={"Retry-After": str(retry_after)},
+        )
+
     user = await users_repo.authenticate_user(username=form_data.username, password=form_data.password)
     if not user:
+        login_rate_limiter.record_failure(form_data.username, client_ip)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication was unsuccessful.",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    login_rate_limiter.reset(form_data.username, client_ip)
     return auth_service.create_token_response(user)
 
 
 @router.post("/authenticate", response_model=schemas.Token)
 async def authenticate(
+    request: Request,
     user_credentials: schemas.Credentials,
     users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
 ) -> schemas.Token:
@@ -85,14 +99,25 @@ async def authenticate(
     Example: curl -X POST http://host:port/v3/access/users/authenticate -d '{"username": "admin", "password": "admin"}' -H "Content-Type: application/json"
     """
 
+    client_ip = request.client.host if request.client else "127.0.0.1"
+    is_limited, retry_after = login_rate_limiter.is_rate_limited(user_credentials.username, client_ip)
+    if is_limited:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many failed login attempts. Please try again later.",
+            headers={"Retry-After": str(retry_after)},
+        )
+
     user = await users_repo.authenticate_user(username=user_credentials.username, password=user_credentials.password)
     if not user:
+        login_rate_limiter.record_failure(user_credentials.username, client_ip)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication was unsuccessful.",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    login_rate_limiter.reset(user_credentials.username, client_ip)
     return auth_service.create_token_response(user)
 
 
@@ -165,6 +190,9 @@ async def update_logged_in_user(
     """
     Update the current active user.
     """
+
+    if current_user.auth_source == "ldap" and user_update.password:
+        raise ControllerBadRequestError("Password cannot be changed for directory-authenticated users")
 
     if user_update.email and await users_repo.get_user_by_email(user_update.email):
         raise ControllerBadRequestError(f"Email '{user_update.email}' is already registered")
@@ -350,7 +378,7 @@ async def create_user(
     Required privilege: User.Allocate
     """
 
-    if await users_repo.get_user_by_username(user_create.username):
+    if await users_repo.get_user_by_username_case_insensitive(user_create.username):
         raise ControllerBadRequestError(f"Username '{user_create.username}' is already registered")
 
     if user_create.email and await users_repo.get_user_by_email(user_create.email):
@@ -408,9 +436,19 @@ async def update_user(
     if user_update.email and await users_repo.get_user_by_email(user_update.email):
         raise ControllerBadRequestError(f"Email '{user_update.email}' is already registered")
 
-    user = await users_repo.update_user(user_id, user_update)
-    if not user:
+    existing_user = await users_repo.get_user(user_id)
+    if not existing_user:
         raise ControllerNotFoundError(f"User '{user_id}' not found")
+
+    extra_values = {}
+    if existing_user.auth_source == "ldap" and user_update.password:
+        from gns3server.config import Config
+
+        if Config.instance().settings.LDAP.enabled:
+            raise ControllerBadRequestError("Password cannot be changed for directory-authenticated users")
+        extra_values["auth_source"] = "local"
+
+    user = await users_repo.update_user(user_id, user_update, **extra_values)
     return user
 
 

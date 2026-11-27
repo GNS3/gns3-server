@@ -38,7 +38,7 @@ from .templates import (
     VMwareTemplate,
     VPCSTemplate,
 )
-from .users import MCPToolWhitelist, User, UserGroup, UserPreferences
+from .users import MCPToolWhitelist, User, UserGroup, UserPreferences, user_group_map
 
 __all__ = [
     "ACE",
@@ -68,4 +68,5 @@ __all__ = [
     "VMwareTemplate",
     "VPCSTemplate",
     "VirtualBoxTemplate",
+    "user_group_map",
 ]
