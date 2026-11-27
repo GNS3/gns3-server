@@ -172,3 +172,50 @@ def test_a_negated_default_is_not_held_against_the_capture_but_a_contradiction_i
 
 def test_a_text_of_only_unprovable_commands_has_nothing_to_compare():
     assert restore_verified("no ip domain-lookup\n", CAPTURE) == (None, None)
+
+
+BGP_CAPTURE = """router bgp 65000
+ neighbor 192.0.2.2 remote-as 65001
+ !
+ address-family ipv4
+  network 192.0.2.0 mask 255.255.255.0
+  redistribute connected
+ exit-address-family
+ !
+ address-family ipv6
+  network 2001:DB8::/32
+ exit-address-family
+ redistribute static
+!
+interface Gi1
+ description x
+end
+"""
+
+
+@pytest.mark.parametrize(
+    "uploaded",
+    [
+        "router bgp 65000\naddress-family ipv4\nnetwork 192.0.2.0 mask 255.255.255.0\n",
+        # The next family and the parent block are entered without an exit line.
+        "router bgp 65000\naddress-family ipv4\nredistribute connected\naddress-family ipv6\nnetwork 2001:DB8::/32\n"
+        "neighbor 192.0.2.2 remote-as 65001\ninterface Gi1\ndescription x\n",
+        "router bgp 65000\naddress-family ipv4\nredistribute connected\nexit-address-family\nredistribute static\n",
+    ],
+    ids=["nested_block", "next_blocks", "explicit_exit"],
+)
+def test_an_unindented_text_follows_nested_blocks_of_the_capture(uploaded):
+    assert restore_verified(uploaded, BGP_CAPTURE) == (True, 1.0)
+
+
+@pytest.mark.parametrize(
+    "uploaded",
+    [
+        "router bgp 65000\naddress-family ipv6\nnetwork 192.0.2.0 mask 255.255.255.0\n",
+        # After the exit the command belongs to the router block, where the capture does not have it.
+        "router bgp 65000\naddress-family ipv4\nexit-address-family\nredistribute connected\n",
+    ],
+    ids=["other_family", "after_exit"],
+)
+def test_an_unindented_command_in_the_wrong_nested_block_does_not_verify(uploaded):
+    assert restore_verified(uploaded, BGP_CAPTURE)[0] is False

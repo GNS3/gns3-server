@@ -38,18 +38,26 @@ def is_flat(content):
 
 
 def flat_scoped_lines(content, present):
-    """The scoped lines of an unindented text, each placed under the parent line of the capture it follows."""
+    """The scoped lines of an unindented text, each placed under the parent lines of the capture it follows.
+
+    A line belongs to the innermost open block whose capture has it; otherwise it stays in the current block.
+    """
     parents = {path[:size] for path in present for size in range(1, len(path))}
     scope = ()
-    for path in scoped_lines(content):
-        value = path[-1]
-        if scope and (*scope, value) in present:
-            yield (*scope, value)
-        elif (value,) in parents or (value,) in present:
-            scope = (value,) if (value,) in parents else ()
-            yield (value,)
-        else:
-            yield (*scope, value)
+    for raw in content.splitlines():
+        if raw.strip().lower() == "exit-address-family":
+            # Both blocks may hold the same command, so this exit cannot be left to the capture to show.
+            family = next((depth for depth, line in enumerate(scope) if line.startswith("address-family ")), None)
+            scope = scope[:family]
+        for (value,) in scoped_lines(raw):
+            for depth in range(len(scope), -1, -1):
+                path = (*scope[:depth], value)
+                if path in parents or path in present:
+                    scope = path if path in parents else scope[:depth]
+                    break
+            else:
+                path = (*scope, value)
+            yield path
 
 
 def restore_verified(uploaded, captured):
