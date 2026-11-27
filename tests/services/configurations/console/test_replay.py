@@ -523,14 +523,15 @@ async def test_routeros_startup_of_a_full_export_resets_to_an_empty_router_then_
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "content,wait_ready",
+    "content,wait_ready,running",
     [
-        (FULL_EXPORT, False),  # an apply to a running node merges: nothing is reset
-        ("/system identity set name=CHR\n", True),  # a short text merges into the defaults
+        (FULL_EXPORT, False, True),  # an apply to a running node merges: nothing is reset
+        (FULL_EXPORT, True, True),  # still a live apply when it also asks to wait for the console
+        ("/system identity set name=CHR\n", True, False),  # a short text merges into the defaults
     ],
-    ids=["live_apply_of_a_full_export", "startup_of_a_short_text"],
+    ids=["live_apply_of_a_full_export", "live_apply_waiting_for_the_console", "startup_of_a_short_text"],
 )
-async def test_routeros_only_resets_for_a_startup_apply_of_a_full_export(appliance, content, wait_ready):
+async def test_routeros_only_resets_for_a_startup_apply_of_a_full_export(appliance, content, wait_ready, running):
     node, transcript = appliance
     commands = routeros_resettable_device(transcript)
     await run_console_session(
@@ -539,6 +540,7 @@ async def test_routeros_only_resets_for_a_startup_apply_of_a_full_export(applian
         device_type="mikrotik_routeros",
         content=content,
         wait_ready=wait_ready,
+        running=running,
         deadline=10,
     )
     assert not any(command.startswith(b"/system reset-configuration") for command in commands)

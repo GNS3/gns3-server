@@ -40,7 +40,7 @@ def restore_routeros(session, content):
     the defaults the text does not mention (a DHCP client, for example) and fails on the ones it repeats.
     A short hand-written text, and an apply to a running node, only merge into the configuration.
     """
-    if session.payload.get("wait_ready") is True and EXPORT_HEADER.match(content):
+    if session.payload.get("startup") is True and EXPORT_HEADER.match(content):
         session.mark("prepare", "/system reset-configuration", 1, 1)
         session.send("/system reset-configuration no-defaults=yes skip-backup=yes")
         answer = session.wait(

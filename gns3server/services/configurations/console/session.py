@@ -303,8 +303,8 @@ class ConsoleSession:
 # ---- The subprocess entry point -----------------------------------------------------------------------------
 
 REQUIRED_FIELDS = frozenset({"port", "username", "password", "enable_secret", "device_type"})
-OPTIONAL_FIELDS = frozenset({"backup", "content", "wait_ready", "save"})
-BOOLEAN_FIELDS = ("backup", "wait_ready", "save")
+OPTIONAL_FIELDS = frozenset({"backup", "content", "wait_ready", "startup", "save"})
+BOOLEAN_FIELDS = ("backup", "wait_ready", "startup", "save")
 CREDENTIAL_FIELDS = ("username", "password", "enable_secret")
 # JSON can represent one content byte as six ASCII bytes (e.g. DEL).
 MAX_REQUEST_BYTES = 6 * MAX_BYTES + 16385

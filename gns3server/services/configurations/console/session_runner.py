@@ -247,6 +247,7 @@ async def run_console_session(
                 backup=backup,
                 content=content,
                 wait_ready=wait_ready,
+                startup=automatic,
                 save=save,
             )
 
@@ -316,6 +317,7 @@ async def _run_leased_session(
     backup=False,
     content=None,
     wait_ready=False,
+    startup=False,
     save=False,
 ) -> bytes:
     """Run the session (a capture, or a replay when ``content`` is given) under an exclusive console lease.
@@ -354,7 +356,7 @@ async def _run_leased_session(
                     if save:
                         payload["save"] = True
                     if content is not None:
-                        payload.update(content=content, wait_ready=wait_ready)
+                        payload.update(content=content, wait_ready=wait_ready, startup=startup)
                     process.stdin.write(json.dumps(payload).encode())
                     await process.stdin.drain()
                     process.stdin.close()
