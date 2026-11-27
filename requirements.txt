@@ -18,7 +18,7 @@ bcrypt==5.0.0
 joserfc==1.8.0
 ldap3==2.9.1
 email-validator==2.3.0
-watchdog==6.0.0 # upgrading to v7.0.0 creates issues
+watchdog==7.1.1 # upgrading to v7.0.0 creates issues
 zstandard==0.25.0
 platformdirs>=4.14.8
 truststore>=0.10.5
