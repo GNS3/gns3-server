@@ -40,6 +40,14 @@ def test_generic_replay_context_has_index_total_and_masked_command():
         ("standby 1 authentication text Hunter2", "standby 1 authentication text <masked>"),
         ("snmp-server user u g v3 auth sha Hunter2 priv aes 128 Hunter3", "snmp-server user u g v3 auth <masked>"),
         ("description text only", "description text only"),
+        # SNMP trap receivers take the community as a bare positional argument.
+        ("snmp-server host 192.0.2.1 version 2c Hunter2", "snmp-server host <masked>"),
+        ("snmp-server host 192.0.2.1 Hunter2", "snmp-server host <masked>"),
+        ("no snmp-server host 192.0.2.1 informs version 2c Hunter2", "no snmp-server host <masked>"),
+        ("snmp-server vrf MGMT host 192.0.2.1 version 2c Hunter2", "snmp-server vrf MGMT host <masked>"),
+        ("R1(config)#snmp-server host 192.0.2.1 traps Hunter2", "R1(config)#snmp-server host <masked>"),
+        ("snmp host 192.0.2.1 Hunter2", "snmp host <masked>"),
+        ("logging host 192.0.2.1", "logging host 192.0.2.1"),
     ],
 )
 def test_mask_text(text, expected):

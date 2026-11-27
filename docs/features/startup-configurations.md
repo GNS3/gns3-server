@@ -668,7 +668,7 @@ All fields except `phase` are optional and only present when known.
 | --- | --- |
 | `phase` | `ready` (the boot-prompt wait timed out; `device_error` holds the last two console lines), `console-wait` (the 900 s apply budget ran out while retrying `console_busy`/`console_unavailable`; `device_error` is `last retry: <code>`), `login`, `prepare` (terminal setup), `enter` (entering configuration mode), `replay` (one configuration line), `save` |
 | `command_index` / `command_total` | 1-based position of the configuration line being replayed, and the number of lines. |
-| `command` | The command that was being run, as a keyword path, at most 160 characters. Quoted strings, `$n$` hashes, long opaque tokens and everything after `password`/`secret`/`key`/`community`/`hash`/`token`... are replaced by `<masked>`. |
+| `command` | The command that was being run, as a keyword path, at most 160 characters. Quoted strings, `$n$` hashes, long opaque tokens and everything after `password`/`secret`/`key`/`community`/`hash`/`token`... or after the `host` of an SNMP command are replaced by `<masked>`. |
 | `device_error` | The first device line that was rejected (or, for validate/commit/pending checks, the first output line), masked the same way and truncated to 250 characters. |
 
 Configuration content, credentials and full device output are never reported or logged. Typical reading: `phase=replay` names the first line the device refused; `phase=ready` means the guest never showed a usable prompt.

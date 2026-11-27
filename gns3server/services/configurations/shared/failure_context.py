@@ -29,8 +29,8 @@ def mask_text(value, limit):
     """Reduce one device/configuration line to a keyword path that is safe to show.
 
     Quoted strings, hashed values and everything after a credential-like keyword
-    (password, secret, key, community, hash, ...) are replaced; long opaque
-    tokens are replaced too. The result is truncated to ``limit`` characters.
+    (password, secret, key, community, hash, ...) or an SNMP ``host`` is replaced;
+    long opaque tokens are replaced too. The result is truncated to ``limit`` characters.
     """
     if not isinstance(value, str):
         return ""
@@ -53,6 +53,8 @@ def mask_text(value, limit):
         if (
             _SENSITIVE.fullmatch(keyword)
             or (lowered == "text" and previous == "authentication")
+            # SNMP trap receivers: the community is a positional argument somewhere after ``host``.
+            or (lowered == "host" and any("snmp" in earlier.lower() for earlier in words[:position]))
             # SNMPv3: ``auth <algorithm> <password> priv <algorithm> <password>``.
             or (lowered in ("auth", "priv") and words[0].lower().startswith("snmp"))
         ):
