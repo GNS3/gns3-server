@@ -92,5 +92,24 @@ def create_default_aces(target, connection, **kw):
             group_id=group_id,
         )
         connection.execute(stmt)
+
+    # Grant the "Administrator" role to the "Administrators" group at "/" so members
+    # have full administrative access over all controller endpoints.
+    stmt_admin_role = roles_table.select().where(roles_table.c.name == "Administrator")
+    admin_role_row = connection.execute(stmt_admin_role).first()
+    stmt_admin_group = user_groups_table.select().where(user_groups_table.c.name == "Administrators")
+    admin_group_row = connection.execute(stmt_admin_group).first()
+
+    if admin_role_row and admin_group_row:
+        stmt = target.insert().values(
+            ace_type="group",
+            path="/",
+            propagate=True,
+            allowed=True,
+            role_id=admin_role_row.role_id,
+            group_id=admin_group_row.user_group_id,
+        )
+        connection.execute(stmt)
+
     connection.commit()
     log.debug("The default ACEs granting the 'User' role to the 'Users' group have been created")

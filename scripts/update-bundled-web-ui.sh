@@ -78,16 +78,6 @@ if [[ -n "$GITHUB_URL" ]]; then
     USE_GITHUB_URL=true
 fi
 
-
-echo "Removing: $GNS3SERVER_DIR/gns3server/static/web-ui/*"
-
-rm -rf $GNS3SERVER_DIR/gns3server/static/web-ui/*
-git rm -rf gns3server/static/web-ui/*
-
-echo "Re-create: $GNS3SERVER_DIR/gns3server/static/web-ui"
-
-mkdir -p "$GNS3SERVER_DIR/gns3server/static/web-ui/"
-
 if [ "$CUSTOM_REPO" = false ] ; then
     if [ ! -d "$REPO_DIR" ]; then
         if [[ -n "$GITHUB_URL" ]]; then
@@ -140,10 +130,26 @@ yarn install
 
 yarn ng build --source-map=false --configuration=production --base-href /static/web-ui/
 
-cp -R $REPO_DIR/dist/browser/* "$GNS3SERVER_DIR/gns3server/static/web-ui/"
+# Verify build output exists before touching the destination directory
+BUILD_OUTPUT=""
+if [ -f "$REPO_DIR/dist/browser/index.html" ]; then
+    BUILD_OUTPUT="$REPO_DIR/dist/browser"
+elif [ -f "$REPO_DIR/dist/index.html" ]; then
+    BUILD_OUTPUT="$REPO_DIR/dist"
+else
+    echo "❌ Error: Production build failed or index.html missing in $REPO_DIR/dist"
+    exit 1
+fi
+
+echo "Build verified at $BUILD_OUTPUT"
+echo "Synchronizing assets to $GNS3SERVER_DIR/gns3server/static/web-ui/..."
+
+rm -rf "$GNS3SERVER_DIR/gns3server/static/web-ui"/*
+mkdir -p "$GNS3SERVER_DIR/gns3server/static/web-ui/"
+cp -R "$BUILD_OUTPUT"/* "$GNS3SERVER_DIR/gns3server/static/web-ui/"
 
 cd "$GNS3SERVER_DIR"
-git add gns3server/static/web-ui/*
+git add -A gns3server/static/web-ui
 if [[ -n "$TAG" ]]
 then
   git commit -m "Bundle web-ui ${TAG}: https://github.com/GNS3/gns3-web-ui/releases#release-${TAG}"

@@ -124,6 +124,26 @@ def _seed_default_aces(connection) -> None:
         inserted += 1
     log.info(f"Inserted {inserted} default ACE(s) granting the 'User' role to the 'Users' group")
 
+    # Wire the built-in "Administrator" role to the built-in "Administrators" group at "/"
+    admin_role_id = connection.execute(sa.text("SELECT role_id FROM roles WHERE name = 'Administrator'")).scalar()
+    admin_group_id = connection.execute(
+        sa.text("SELECT user_group_id FROM user_groups WHERE name = 'Administrators'")
+    ).scalar()
+    if admin_role_id and admin_group_id:
+        existing_admin = connection.execute(
+            sa.text("SELECT ace_id FROM acl WHERE group_id = :group_id AND path = '/'"),
+            {"group_id": admin_group_id},
+        ).scalar()
+        if existing_admin is None:
+            connection.execute(
+                sa.text(
+                    "INSERT INTO acl (ace_id, ace_type, path, propagate, allowed, role_id, group_id)"
+                    " VALUES (:ace_id, 'group', '/', 1, 1, :role_id, :group_id)"
+                ),
+                {"ace_id": uuid.uuid4().hex, "role_id": admin_role_id, "group_id": admin_group_id},
+            )
+            log.info("Inserted default ACE granting the 'Administrator' role to the 'Administrators' group on '/'")
+
 
 def _remove_default_aces(connection) -> None:
     """
@@ -134,15 +154,27 @@ def _remove_default_aces(connection) -> None:
 
     role_id = connection.execute(sa.text("SELECT role_id FROM roles WHERE name = 'User'")).scalar()
     group_id = connection.execute(sa.text("SELECT user_group_id FROM user_groups WHERE name = 'Users'")).scalar()
-    if role_id is None or group_id is None:
-        return
-    connection.execute(
-        sa.text(
-            "DELETE FROM acl WHERE group_id = :group_id AND role_id = :role_id AND user_id IS NULL"
-            " AND path IN :paths AND propagate = 1 AND allowed = 1"
-        ).bindparams(sa.bindparam("paths", expanding=True)),
-        {"group_id": group_id, "role_id": role_id, "paths": list(DEFAULT_PATHS)},
-    )
+    if role_id is not None and group_id is not None:
+        connection.execute(
+            sa.text(
+                "DELETE FROM acl WHERE group_id = :group_id AND role_id = :role_id AND user_id IS NULL"
+                " AND path IN :paths AND propagate = 1 AND allowed = 1"
+            ).bindparams(sa.bindparam("paths", expanding=True)),
+            {"group_id": group_id, "role_id": role_id, "paths": list(DEFAULT_PATHS)},
+        )
+
+    admin_role_id = connection.execute(sa.text("SELECT role_id FROM roles WHERE name = 'Administrator'")).scalar()
+    admin_group_id = connection.execute(
+        sa.text("SELECT user_group_id FROM user_groups WHERE name = 'Administrators'")
+    ).scalar()
+    if admin_role_id is not None and admin_group_id is not None:
+        connection.execute(
+            sa.text(
+                "DELETE FROM acl WHERE group_id = :group_id AND role_id = :role_id AND user_id IS NULL"
+                " AND path = '/' AND propagate = 1 AND allowed = 1"
+            ),
+            {"group_id": admin_group_id, "role_id": admin_role_id},
+        )
 
 
 # keep in sync with create_default_aces in gns3server/db/models/acl.py

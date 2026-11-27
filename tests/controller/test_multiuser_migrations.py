@@ -59,11 +59,12 @@ def test_default_aces_are_seeded_without_propagation_on_projects():
     engine = sa.create_engine("sqlite://")
     with engine.connect() as connection:
         Base.metadata.create_all(connection)
-        assert connection.scalar(sa.text("SELECT COUNT(*) FROM acl")) == 8
+        assert connection.scalar(sa.text("SELECT COUNT(*) FROM acl")) == 9
         propagate = dict(connection.exec_driver_sql("SELECT path, propagate FROM acl").all())
         # the collection ACE must not grant access to the projects themselves
         assert propagate["/projects"] == 0
         assert propagate["/templates"] == 1
+        assert propagate["/"] == 1
         connection.commit()
     engine.dispose()
 
@@ -130,9 +131,76 @@ async def test_default_projects_ace_is_restricted_on_upgrade(tmp_path, monkeypat
     await connect_to_db(app)
     try:
         async with app.state._db_engine.connect() as connection:
-            assert await connection.scalar(sa.text("SELECT COUNT(*) FROM acl")) == 8
+            assert await connection.scalar(sa.text("SELECT COUNT(*) FROM acl")) == 9
             propagate = await connection.scalar(sa.text("SELECT propagate FROM acl WHERE path = '/projects'"))
             assert propagate == 0
+    finally:
+        await app.state._db_engine.dispose()
+
+
+@pytest.mark.asyncio
+async def test_project_action_privileges_and_administrators_ace_seeded_on_upgrade(tmp_path, monkeypatch):
+    """
+    Simulate a database that had b7d4c3f2a1e9 applied before the LDAP work
+    added the Administrators wiring and the project action privileges (any
+    database created from an earlier seeding content): its alembic version
+    is at b7d4c3f2a1e9, so the upgrade to ab9aec245c08 must bring the
+    missing privileges, their role wiring and the Administrators default
+    ACE along — the seeding cannot live in b7d4c3f2a1e9 itself, which
+    alembic never re-runs.
+    """
+    path = tmp_path / "controller.db"
+    engine = sa.create_engine(f"sqlite:///{path}")
+    with engine.connect() as connection:
+        Base.metadata.create_all(connection)
+        # simulate the pre-LDAP seeding content: no ACE for Administrators
+        # and no project action privileges
+        connection.exec_driver_sql(
+            "DELETE FROM acl WHERE group_id = (SELECT user_group_id FROM user_groups WHERE name = 'Administrators')"
+        )
+        connection.exec_driver_sql(
+            "DELETE FROM privilege_role_map WHERE privilege_id IN"
+            " (SELECT privilege_id FROM privileges WHERE name IN"
+            " ('Project.Share', 'Project.Distribute', 'User.GroupMembers'))"
+        )
+        connection.exec_driver_sql(
+            "DELETE FROM privileges WHERE name IN ('Project.Share', 'Project.Distribute', 'User.GroupMembers')"
+        )
+        cfg = _alembic_config()
+        cfg.attributes["connection"] = connection
+        command.stamp(cfg, "b7d4c3f2a1e9")
+        connection.commit()
+    engine.dispose()
+
+    monkeypatch.setenv("GNS3_DATABASE_URI", f"sqlite+aiosqlite:///{path}")
+    app = FastAPI()
+    await connect_to_db(app)
+    try:
+        async with app.state._db_engine.connect() as connection:
+            missing = await connection.scalar(
+                sa.text(
+                    "SELECT COUNT(*) FROM privileges WHERE name IN"
+                    " ('Project.Share', 'Project.Distribute', 'User.GroupMembers')"
+                )
+            )
+            assert missing == 3
+            wired = await connection.scalar(
+                sa.text(
+                    "SELECT COUNT(DISTINCT p.name) FROM privilege_role_map m"
+                    " JOIN roles r ON r.role_id = m.role_id"
+                    " JOIN privileges p ON p.privilege_id = m.privilege_id"
+                    " WHERE p.name IN ('Project.Share', 'Project.Distribute', 'User.GroupMembers')"
+                    " AND r.name = 'User'"
+                )
+            )
+            assert wired == 3
+            ace = await connection.scalar(
+                sa.text(
+                    "SELECT COUNT(*) FROM acl WHERE group_id ="
+                    " (SELECT user_group_id FROM user_groups WHERE name = 'Administrators') AND path = '/'"
+                )
+            )
+            assert ace == 1
     finally:
         await app.state._db_engine.dispose()
 

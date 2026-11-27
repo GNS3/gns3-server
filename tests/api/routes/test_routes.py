@@ -29,6 +29,7 @@ pytestmark = pytest.mark.asyncio
 ALLOWED_CONTROLLER_ENDPOINTS = [
     ("/", "GET"),
     ("/debug", "GET"),
+    ("/static/web-ui", "GET"),
     ("/static/web-ui/{file_path:path}", "GET"),
     ("/docs", "GET"),
     ("/docs/oauth2-redirect", "GET"),

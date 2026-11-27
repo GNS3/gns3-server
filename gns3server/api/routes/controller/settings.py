@@ -20,6 +20,7 @@ API routes for managing the server settings (gns3_server.conf).
 """
 
 import logging
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import ValidationError
@@ -29,6 +30,7 @@ from gns3server.config import Config, ConfigConflictError
 from gns3server.controller import Controller
 from gns3server.controller.controller_error import ControllerBadRequestError, ControllerError
 from gns3server.schemas.controller.settings import SECRET_MASK
+from gns3server.services import ldap_service
 
 from .dependencies.rbac import has_privilege
 
@@ -133,7 +135,11 @@ async def update_server_settings(settings_update: schemas.SettingsUpdate) -> sch
     }
 
     # masked or empty secrets mean "unchanged": never write them back
-    for section, option in (("Server", "compute_password"), ("Controller", "default_admin_password")):
+    for section, option in (
+        ("Server", "compute_password"),
+        ("Controller", "default_admin_password"),
+        ("LDAP", "bind_password"),
+    ):
         if section in changes and changes[section].get(option) in ("", SECRET_MASK):
             del changes[section][option]
 
@@ -152,6 +158,13 @@ async def update_server_settings(settings_update: schemas.SettingsUpdate) -> sch
     except OSError as e:
         raise ControllerError(f"Could not write the configuration file: {e}")
 
+    if Config.instance().settings.LDAP.enabled and not Config.instance().settings.Server.enable_ssl:
+        log.warning(
+            "SECURITY WARNING: LDAP authentication is active over unencrypted HTTP. "
+            "Domain credentials will be transmitted in plaintext across the network unless "
+            "GNS3 is fronted by an HTTPS reverse proxy (e.g. Nginx, Caddy)."
+        )
+
     restart_required = sorted(set(changed) & RESTART_REQUIRED)
 
     # only send metadata, never settings values (they may contain secrets)
@@ -164,3 +177,37 @@ async def update_server_settings(settings_update: schemas.SettingsUpdate) -> sch
     data = _current_settings_response()
     data["restart_required"] = restart_required
     return schemas.SettingsUpdateResponse.model_validate(data)
+
+
+@router.post(
+    "/ldap/test",
+    response_model=schemas.LDAPTestConnectionResponse,
+    dependencies=[Depends(has_privilege("Server.Modify"))],
+    responses={
+        400: {"model": schemas.ErrorMessage},
+        401: {"model": schemas.ErrorMessage},
+        403: {"model": schemas.ErrorMessage},
+        422: {"model": schemas.ErrorMessage},
+    },
+)
+async def test_ldap_connection(
+    settings_update: Optional[schemas.LDAPSettingsUpdate] = None,
+) -> schemas.LDAPTestConnectionResponse:
+    """
+    Test LDAP connection and canary search against running or submitted settings.
+
+    Requires privilege: Server.Modify
+    """
+
+    current_settings = Config.instance().settings.LDAP
+    effective_dict = current_settings.model_dump()
+
+    if settings_update is not None:
+        submitted = settings_update.model_dump(exclude_unset=True)
+        if submitted.get("bind_password") in ("", SECRET_MASK, None):
+            submitted.pop("bind_password", None)
+        effective_dict.update(submitted)
+
+    effective_settings = schemas.LDAPSettings.model_validate(effective_dict)
+    result = await ldap_service.test_connection(effective_settings)
+    return schemas.LDAPTestConnectionResponse.model_validate(result)

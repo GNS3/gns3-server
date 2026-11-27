@@ -145,6 +145,9 @@ async def connect_to_db(app: FastAPI) -> None:
                         from gns3server.db_migrations.versions.a6c8e1b2d490_add_second_qemu_cdrom import (
                             upgrade as upgrade_cdrom,
                         )
+                        from gns3server.db_migrations.versions.ab9aec245c08_add_auth_source_to_users_table import (
+                            upgrade as upgrade_auth_source,
+                        )
                         from gns3server.db_migrations.versions.b7d4c3f2a1e9_multiuser_rbac_distribution_quotas_mcp import (
                             upgrade as upgrade_multiuser,
                         )
@@ -164,6 +167,7 @@ async def connect_to_db(app: FastAPI) -> None:
                             # migration (seed the default ACEs, the built-in
                             # privileges and roles, and create the new tables)
                             upgrade_multiuser()
+                            upgrade_auth_source()
 
                     await conn.run_sync(upgrade_inventory)
                     await conn.run_sync(run_stamp, alembic_cfg)
