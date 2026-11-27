@@ -18,7 +18,7 @@ from gns3server.db_migrations.versions import (
     a4d1f6b83c52_add_startup_media_profile_to_qemu_templates as media_migration,
 )
 
-RELEASED_REVISION = "b7d4c3f2a1e9"  # the last released revision before startup media
+RELEASED_REVISION = "ab9aec245c08"  # the last released revision before startup media
 
 
 @pytest.fixture
