@@ -312,6 +312,21 @@ def test_importing_a_set_as_the_default_moves_the_choices_like_the_editor_does(t
     assert nodes[without_entry]["kind"] == "none"
 
 
+@pytest.mark.parametrize("covered", [True, False], ids=["archive_covers_the_node", "archive_without_the_node"])
+def test_importing_a_set_as_the_default_keeps_choices_of_other_sets(tmp_path, covered):
+    node_id, other_id = str(uuid4()), str(uuid4())
+    payload = exported_archive(tmp_path, [(node_id if covered else other_id, "R1" if covered else "R2", "iou")])
+    nodes = [(node_id, "R1", "iou"), (other_id, "R2", "iou")]
+    target = configuration_project(tmp_path / "target", nodes)
+    store, selections = StartupStore(target), SelectionStore(target)
+    document, other = store.create_set("Other set", revision=store.read().revision)
+    selections.assign(node_id, Selection(kind="set", set_id=other.id), 0)
+    request, manifest = import_into(target, payload, select=True)
+    import_set(target, request, manifest)
+    assert store.read().selected != document.selected
+    assert selections.selections()["nodes"][node_id] == {"kind": "set", "set_id": str(other.id)}
+
+
 def test_importing_a_set_without_selecting_it_leaves_the_choices_alone(tmp_path):
     node_id = str(uuid4())
     payload = exported_archive(tmp_path, [(node_id, "R1", "iou")])

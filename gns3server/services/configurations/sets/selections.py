@@ -128,7 +128,7 @@ def default_selection_changes(previous, current, assignments):
         if source.kind == "set" and source.set_id not in set_ids:
             changes[identifier] = Selection()
             continue
-        if current.selected == previous.selected and source.kind == "set" and source.set_id != current.selected:
+        if source.kind == "set" and source.set_id != previous.selected:
             continue
         node_id = UUID(identifier)
         entry = active.nodes.get(node_id)
