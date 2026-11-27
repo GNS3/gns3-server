@@ -285,7 +285,7 @@ async def test_startup_waits_passively_and_preserves_interactive_console_during_
         assert b"hostname restored" in commands
         assert (b"write memory" if driver == "cisco_ios_telnet" else b"copy running-config startup-config") in commands
         assert proxy._exclusive_console is None
-        assert not proxy._console_readiness.tail  # Private configuration output is not cached.
+        assert proxy._console_readiness.tail == b"R1#"  # The prompt only: private output is not cached.
     finally:
         if client:
             client.close()

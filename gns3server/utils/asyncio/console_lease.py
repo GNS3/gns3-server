@@ -2,6 +2,11 @@
 
 import asyncio
 import contextlib
+import re
+
+# Enough for a prompt with terminal decoration.
+PROMPT_BYTES = 512
+LINE_BREAK = re.compile(rb"[\r\n]")
 
 
 class ConsoleLeaseError(ConnectionError):
@@ -64,6 +69,8 @@ class ConsoleLease:
         self.error: ConsoleLeaseError | None = None
         self.written_bytes = 0
         self.probe_only = True
+        # What the guest has not terminated yet: its prompt, once a session is over. Never a completed line.
+        self.last_line = b""
 
     def feed_data(self, data):
         if self._closed or self.error:
@@ -73,6 +80,7 @@ class ConsoleLease:
             self.error = ConsoleLeaseError("console_output_limit")
             self.reader.set_exception(self.error)
             return
+        self.last_line = LINE_BREAK.split(self.last_line + data)[-1][-PROMPT_BYTES:]
         self.reader.feed_data(data)
 
     def write(self, data):
@@ -143,6 +151,8 @@ class ConsoleLeaseMixin:
             yield lease
             if lease.error is not None:
                 raise lease.error
+            # A quiet guest does not print its prompt again for whoever waits next, such as the readback.
+            self._console_readiness.feed_data(lease.last_line)
         finally:
             lease.close()
             self._exclusive_console = None

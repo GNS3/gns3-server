@@ -259,3 +259,32 @@ async def test_passive_readiness_waits_for_a_settled_prompt():
     assert not task.done()
     observed.feed_data(b"Router#")
     await asyncio.wait_for(task, 1)
+
+
+@pytest.mark.parametrize("console_type", ["telnet", "ssh"])
+async def test_only_a_finished_lease_hands_its_final_prompt_to_readiness(console_type):
+    upstream = asyncio.StreamReader()
+    proxy = (
+        AsyncioTelnetServer(reader=upstream, writer=DummyUpstreamWriter(), keepalive_interval=0)
+        if console_type == "telnet"
+        else AsyncioSSHServer(reader=upstream, writer=DummyUpstreamWriter())
+    )
+    listener = await proxy.start("127.0.0.1", 0)
+
+    async def session(*chunks, fail=False):
+        async with proxy.lease_console() as lease:
+            for chunk in chunks:
+                upstream.feed_data(chunk)
+                await asyncio.wait_for(lease.reader.readexactly(len(chunk)), timeout=2)
+            if fail:
+                raise RuntimeError
+        return proxy._console_readiness.tail
+
+    try:
+        assert await session(b"private\r\nR", b"1#") == b"R1#"
+        with pytest.raises(RuntimeError):
+            await session(b"R1(config)#", fail=True)
+        assert proxy._console_readiness.tail == b""
+    finally:
+        listener.close()
+        await listener.wait_closed()
