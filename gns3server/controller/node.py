@@ -24,12 +24,21 @@ import re
 import uuid
 from os.path import commonpath
 
+from gns3server.services.configurations.boot_media.profiles import profile_fits_device
+from gns3server.services.configurations.shared.node_lease import lifecycle_action, node_lease
+
 from ..config import Config
 from ..utils import int_to_macaddress, macaddress_to_int
 from ..utils.application_id import is_iol_runner_environment
 from ..utils.images import images_directories
 from ..utils.vxlan import vxlan_device_name
-from .controller_error import ComputeConflictError, ComputeError, ControllerError, ControllerTimeoutError
+from .controller_error import (
+    ComputeConflictError,
+    ComputeError,
+    ControllerBadRequestError,
+    ControllerError,
+    ControllerTimeoutError,
+)
 from .node_types import BUILTIN_NODE_TYPES
 from .ports.port_factory import DynamipsPortFactory, PortFactory, StandardPortFactory
 from .quota_usage import reserve_start
@@ -48,7 +57,6 @@ _VXLAN_CONFLICT_RE = re.compile(r"Could not create VXLAN device (?P<device>\S+)"
 # cannot hit the conflict) — a start must not fail permanently because
 # another link already registered the VNI on the shared dstport socket.
 _VXLAN_START_HEALS = 2
-
 
 # Image properties of a node, mapped by node type. The value is the image
 # "type" used by the image manager (see utils.images). Docker images are not
@@ -155,6 +163,9 @@ class Node:
         self._command_line = None
         self._node_directory = None
         self._status = "stopped"
+        # The running preparation of a start, and whether a stop or delete has abandoned that start.
+        self._preparation = None
+        self._start_abandoned = False
         self._status_changed = asyncio.Event()
         self._template_id = template_id
         self._x = 0
@@ -715,14 +726,37 @@ class Node:
             new_properties.pop("md5sum", None)
         return replaced_properties
 
+    def _check_startup_media_profile(self, changes):
+        """Refuse a startup boot media profile of another appliance than the node's device type."""
+        if self._node_type != "qemu":
+            return
+        properties = changes.get("properties") or {}
+        if "netmiko_device_type" not in changes and "startup_media_profile" not in properties:
+            return
+        profile = properties.get("startup_media_profile", self._properties.get("startup_media_profile"))
+        device_type = changes.get("netmiko_device_type", self._netmiko_device_type)
+        if profile and not profile_fits_device(profile, device_type):
+            raise ControllerBadRequestError(
+                f"The startup configuration profile '{profile}' does not fit the node's device type '{device_type}'"
+            )
+
     async def update(self, **kwargs):
         """
         Update the node on the compute
 
         :param kwargs: Node properties
         """
+        if all(prop in self.CONTROLLER_ONLY_PROPERTIES for prop in kwargs):
+            # Never reaches the compute: moving a node must not wait for it to finish starting or stopping.
+            return await self._update(**kwargs)
+        async with node_lease(self):
+            return await self._update(**kwargs)
+
+    async def _update(self, **kwargs):
 
         self.project.check_mutable(f"updating node '{self._name}'")
+        self._check_startup_media_profile(kwargs)
+
         # When updating properties used only on controller we don't need to call the compute
         update_compute = False
         old_json = self.asdict()
@@ -952,6 +986,7 @@ class Node:
             self._status_changed.clear()
             await self._status_changed.wait()
 
+    @lifecycle_action
     async def start(self, data=None):
         """
         Start a node
@@ -959,6 +994,7 @@ class Node:
         # running a node writes its disks: forbidden on a frozen template
         # whose distributed copies depend on them
         self.project.check_mutable(f"starting node '{self._name}'")
+        self._start_abandoned = False
         # Starting an already started node is a no-op on the compute side
         # and takes no additional quota slot.
         reservation = reserve_start(self.project) if self._status != "started" else None
@@ -972,6 +1008,8 @@ class Node:
         """
         Start a node, after the running-node quota has been reserved.
         """
+        from gns3server.controller.configurations import launch_apply, prepare_start
+        from gns3server.services.configurations.shared.errors import STARTUP_PREPARE_ERRORS, ConfigurationError
 
         if self.missing_image:
             images = ", ".join(m["image"] for m in self._missing_images)
@@ -992,6 +1030,23 @@ class Node:
                     f"Cannot start node '{self._name}': {len(failed_links)} deferred link(s) "
                     "could not be restored. Please try again."
                 )
+        prepared_startup = None
+        if self.status == "stopped":
+            # Preparing can take minutes (it builds or erases disks): a Stop or delete cancels it.
+            self._preparation = asyncio.ensure_future(prepare_start(self))
+            try:
+                prepared_startup = await self._preparation
+            except asyncio.CancelledError:
+                if not self._start_abandoned:
+                    raise
+            except ConfigurationError as error:
+                detail = STARTUP_PREPARE_ERRORS.get(error.code, error.code)
+                raise ControllerError(f"Cannot prepare startup configuration for '{self.name}': {detail}") from None
+            finally:
+                self._preparation = None
+        if self._start_abandoned:
+            log.info("Start of node '%s' abandoned: it was stopped or deleted while being prepared", self._name)
+            return
         for heal in range(_VXLAN_START_HEALS + 1):
             try:
                 await self._start_on_compute(data)
@@ -1019,6 +1074,9 @@ class Node:
                     # could even retry — degrade the pair to the relay now.
                     await self._project._redispatch_vxlan_links([conflicted], downgrade=True)
         self._confirm_status("started")
+        # Restore belongs to the successfully started guest. Link reconciliation
+        # can fail independently and must not prevent its configuration job.
+        launch_apply(self, prepared_startup)
         # A started node may have brought kernel anchors into existence that
         # a link needs to finish wiring (the Ethernet-switch fast path joins
         # the peer's anchor on the switch side — see UDPLink.node_started).
@@ -1061,7 +1119,26 @@ class Node:
                 return link
         return None
 
+    def _abandon_start(self):
+        """Cancel a start that is still preparing, instead of waiting for it. A launch already sent is not
+        interrupted: what follows it waits for the compute."""
+        self._start_abandoned = True
+        if self._preparation is not None:
+            self._preparation.cancel()
+
     async def stop(self, strict=False):
+        # Interrupt console work before waiting for its lifecycle lease. A
+        # stop must remain available throughout a long startup/live apply.
+        from gns3server.controller.configurations import cancel_apply
+
+        cancel_apply(self)
+        self._abandon_start()
+        async with node_lease(self):
+            # A start that held the node meanwhile may have launched a new replay.
+            cancel_apply(self)
+            await self._stop(strict=strict)
+
+    async def _stop(self, strict=False):
         """
         Stop a node
 
@@ -1096,6 +1173,7 @@ class Node:
             self._set_status(status)
         self.project.emit_notification("node.updated", self.asdict())
 
+    @lifecycle_action
     async def suspend(self):
         """
         Suspend a node
@@ -1107,13 +1185,38 @@ class Node:
             raise ControllerTimeoutError(f"Timeout when suspending {self._name}")
         self._confirm_status("suspended")
 
+    @lifecycle_action
     async def reload(self):
         """
         Suspend a node
         """
+        self.project.check_mutable(f"reloading node '{self._name}'")
+        from gns3server.controller.configurations import (
+            has_media_profile,
+            managed,
+            preparation_marker,
+            selected_entry,
+        )
+        from gns3server.services.configurations.shared.errors import ConfigurationError
+
+        try:
+            managed_node = managed(self)
+            startup = None if managed_node or has_media_profile(self) else selected_entry(self)
+            # A stopped node with native startup files may never have launched since its Wipe: only Start
+            # delivers, repeats or withdraws them, so its Reload is a Stop and Start. QEMU nodes keep their reload.
+            pending = (
+                self._status == "stopped"
+                and self._node_type != "qemu"
+                and (managed_node or preparation_marker(self).exists())
+            )
+        except ConfigurationError as error:
+            raise ControllerError(f"Cannot read startup configuration for '{self.name}': {error.code}") from None
+        if startup is not None or pending:
+            await self.stop()
+            await self.start()
+            return
         # A reload ends with the node started: reserve a running slot
         # unless it already holds one.
-        self.project.check_mutable(f"reloading node '{self._name}'")
         reservation = reserve_start(self.project) if self._status != "started" else None
         try:
             await self.post("/reload", timeout=240)
@@ -1173,18 +1276,24 @@ class Node:
         """
         HTTP post on the node
         """
-        if self.missing_image and path is None:
-            # The node was never created on the compute (missing image). Any
-            # partial object there is cleaned up when the project is closed.
-            return None
-        if path is None:
-            return await self._compute.delete(
-                f"/projects/{self._project.id}/{self._node_type}/nodes/{self._id}", **kwargs
-            )
-        else:
+        if path is not None:
+            # NIO removal is part of link rollback, which can run inside a lifecycle action of this node.
             return await self._compute.delete(
                 f"/projects/{self._project.id}/{self._node_type}/nodes/{self._id}{path}", **kwargs
             )
+        from gns3server.controller.configurations import cancel_apply
+
+        cancel_apply(self)
+        self._abandon_start()
+        async with node_lease(self):
+            return await self._delete(**kwargs)
+
+    async def _delete(self, **kwargs):
+        if self.missing_image:
+            # The node was never created on the compute (missing image). Any
+            # partial object there is cleaned up when the project is closed.
+            return None
+        return await self._compute.delete(f"/projects/{self._project.id}/{self._node_type}/nodes/{self._id}", **kwargs)
 
     async def _upload_missing_image(self, type, img, image_digest=None):
         """

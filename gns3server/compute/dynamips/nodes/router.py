@@ -32,6 +32,14 @@ import time
 
 log = logging.getLogger(__name__)
 
+from gns3server.services.configurations.shared import preparation
+from gns3server.services.configurations.shared.node_lease import lifecycle_action
+from gns3server.services.configurations.shared.startup_journal import (
+    journal_path,
+    mark_started,
+    native_runtime_owned,
+    native_save_allowed,
+)
 from gns3server.utils.asyncio import monitor_process, wait_run_in_executor
 from gns3server.utils.file_watcher import FileWatcher
 from gns3server.utils.hostname import is_ios_hostname_valid
@@ -93,7 +101,7 @@ class Router(KernelDatapathMixin, BaseNode):
             console_type=console_type,
             aux=aux,
             aux_type=aux_type,
-            wrap_console=(console_type == "ssh"),
+            wrap_console=(not ghost_flag and console_type in ("telnet", "ssh")),
             wrap_aux=(aux_type == "ssh"),
         )
 
@@ -113,6 +121,7 @@ class Router(KernelDatapathMixin, BaseNode):
         self._image = ""
         self._ram = 128  # Megabytes
         self._nvram = 128  # Kilobytes
+        self._configuration_save_tasks = set()
         self._mmap = True
         self._sparsemem = True
         self._clock_divisor = 8
@@ -234,7 +243,9 @@ class Router(KernelDatapathMixin, BaseNode):
         """
         Called when the NVRAM file has changed
         """
-        asyncio.ensure_future(self.save_configs())
+        task = asyncio.ensure_future(self.save_configs())
+        self._configuration_save_tasks.add(task)
+        task.add_done_callback(self._configuration_save_tasks.discard)
 
     @property
     def dynamips_id(self):
@@ -262,8 +273,8 @@ class Router(KernelDatapathMixin, BaseNode):
             log.debug(f'Router {self._platform} "{self._name}" [{self._id}] has been created')
 
             if self._console is not None:
-                # For SSH console, tell Dynamips to listen on the internal port so that
-                # the AsyncioSSHServer proxy can wrap it on the external console port.
+                # Keep the appliance console behind the proxy for client sharing and
+                # exclusive configuration export access with either console protocol.
                 con_port = (
                     self._internal_console_port if self._wrap_console and self._internal_console_port else self._console
                 )
@@ -291,6 +302,7 @@ class Router(KernelDatapathMixin, BaseNode):
             raise DynamipsError(f"Can't get vm {self._name} status")
         return self._status[int(status[0])]
 
+    @lifecycle_action
     async def start(self):
         """
         Starts this router.
@@ -301,6 +313,7 @@ class Router(KernelDatapathMixin, BaseNode):
         if status == "suspended":
             await self.resume()
         elif status == "inactive":
+            native_runtime_owned(self)
             if not os.path.isfile(self._image) or not os.path.exists(self._image):
                 if os.path.islink(self._image):
                     raise DynamipsError(
@@ -327,6 +340,11 @@ class Router(KernelDatapathMixin, BaseNode):
             # config paths are relative to the working directory configured on Dynamips hypervisor
             startup_config_path = os.path.join("configs", f"i{self._dynamips_id}_startup-config.cfg")
             private_config_path = os.path.join("configs", f"i{self._dynamips_id}_private-config.cfg")
+            if journal_path(self).exists():
+                # A shared hypervisor may have another router's working dir.
+                # Pin only this router's files without changing global cwd.
+                startup_config_path = self.startup_config_path if os.path.exists(self.startup_config_path) else ""
+                private_config_path = self.private_config_path
 
             if not os.path.exists(os.path.join(self._working_directory, private_config_path)) or not os.path.getsize(
                 os.path.join(self._working_directory, private_config_path)
@@ -340,6 +358,7 @@ class Router(KernelDatapathMixin, BaseNode):
             await self._prepare_tap_datapath()
 
             await self._hypervisor.send(f'vm set_config "{self._name}" "{startup_config_path}" "{private_config_path}"')
+            mark_started(self)
             await self._hypervisor.send(f'vm start "{self._name}"')
             self.status = "started"
             log.debug(f'router "{self._name}" [{self._id}] has been started')
@@ -347,11 +366,18 @@ class Router(KernelDatapathMixin, BaseNode):
             self._memory_watcher = FileWatcher(self._memory_files(), self._memory_changed, strategy="hash", delay=30)
             monitor_process(self._hypervisor.process, self._termination_callback)
 
-        if self._wrap_console or self._wrap_aux:
+        if (self._wrap_console or self._wrap_aux) and not self._wrapper_telnet_servers:
             try:
                 await self.start_wrap_console()
             except OSError as e:
                 raise DynamipsError(f"Could not start Dynamips console wrapper: {e}")
+
+    def _internal_console_host(self):
+        """Dynamips binds its consoles to the console host when it supports that, else to every address."""
+        if not self._hypervisor.binds_console_host:
+            return "127.0.0.1"
+        host = self._manager.port_manager.console_host
+        return {"0.0.0.0": "127.0.0.1", "::": "::1"}.get(host, host)
 
     async def _termination_callback(self, returncode):
         """
@@ -371,6 +397,7 @@ class Router(KernelDatapathMixin, BaseNode):
                     },
                 )
 
+    @lifecycle_action
     async def stop(self):
         """
         Stops this router.
@@ -387,9 +414,14 @@ class Router(KernelDatapathMixin, BaseNode):
         if self._memory_watcher:
             self._memory_watcher.close()
             self._memory_watcher = None
+        saves = list(self._configuration_save_tasks)
+        for task in saves:
+            task.cancel()
+        await asyncio.gather(*saves, return_exceptions=True)
         await self.save_configs()
         await self.stop_wrap_console()
 
+    @lifecycle_action
     async def reload(self):
         """
         Reload this router.
@@ -398,6 +430,7 @@ class Router(KernelDatapathMixin, BaseNode):
         await self.stop()
         await self.start()
 
+    @lifecycle_action
     async def suspend(self):
         """
         Suspends this router.
@@ -409,6 +442,7 @@ class Router(KernelDatapathMixin, BaseNode):
             self.status = "suspended"
             log.debug(f'Router "{self._name}" [{self._id}] has been suspended')
 
+    @lifecycle_action
     async def resume(self):
         """
         Resumes this suspended router
@@ -432,6 +466,7 @@ class Router(KernelDatapathMixin, BaseNode):
             return True
         return False
 
+    @lifecycle_action
     async def close(self):
 
         if not (await super().close()):
@@ -979,6 +1014,9 @@ class Router(KernelDatapathMixin, BaseNode):
         self.console = console
         con_port = self._internal_console_port if self._wrap_console and self._internal_console_port else self.console
         await self._hypervisor.send(f'vm set_con_tcp_port "{self._name}" {con_port}')
+        if self.status == "started" and self._wrap_console:
+            # The proxy owns the external port: move its listener too.
+            await self.reset_wrap_console()
 
     async def set_console_type(self, console_type):
         """
@@ -995,20 +1033,12 @@ class Router(KernelDatapathMixin, BaseNode):
         self.console_type = console_type
 
         if self._console:
-            if console_type == "ssh":
-                # Switching to SSH: ensure an internal port is allocated and redirect Dynamips to it.
+            if console_type in ("telnet", "ssh") and not self._ghost_flag:
+                # Both protocols need the proxy's exclusive configuration lease.
                 self._wrap_console = True
                 if self._internal_console_port is None:
-                    self._internal_console_port = self._manager.port_manager.get_free_tcp_port(self._project)
+                    self._internal_console_port = self._free_internal_port()
                 await self._hypervisor.send(f'vm set_con_tcp_port "{self._name}" {self._internal_console_port}')
-            elif console_type == "telnet":
-                # Switching to telnet: stop SSH wrapper if running and redirect Dynamips to external port.
-                await self.stop_wrap_console()
-                self._wrap_console = False
-                if self._internal_console_port is not None:
-                    self._manager.port_manager.release_tcp_port(self._internal_console_port, self._project)
-                    self._internal_console_port = None
-                await self._hypervisor.send(f'vm set_con_tcp_port "{self._name}" {self._console}')
 
     async def set_aux(self, aux):
         """
@@ -1057,7 +1087,8 @@ class Router(KernelDatapathMixin, BaseNode):
         Reset console
         """
 
-        pass  # reset console is not supported with Dynamips
+        if self.status == "started" and self._wrap_console:
+            await self.reset_wrap_console()
 
     async def get_cpu_usage(self, cpu_id=0):
         """
@@ -1816,27 +1847,28 @@ class Router(KernelDatapathMixin, BaseNode):
 
         await self._hypervisor.send(f'vm rename "{self._name}" "{new_name}"')
 
-        # change the hostname in the startup-config
-        if os.path.isfile(self.startup_config_path):
-            try:
-                with open(self.startup_config_path, "r+", encoding="utf-8", errors="replace") as f:
-                    old_config = f.read()
-                    new_config = re.sub(r"hostname .+$", "hostname " + new_name, old_config, flags=re.MULTILINE)
-                    f.seek(0)
-                    f.write(new_config)
-            except OSError as e:
-                raise DynamipsError(f"Could not amend the configuration {self.startup_config_path}: {e}")
+        with preparation.keeping_ownership(self):
+            # change the hostname in the startup-config
+            if os.path.isfile(self.startup_config_path):
+                try:
+                    with open(self.startup_config_path, "r+", encoding="utf-8", errors="replace") as f:
+                        old_config = f.read()
+                        new_config = re.sub(r"hostname .+$", "hostname " + new_name, old_config, flags=re.MULTILINE)
+                        f.seek(0)
+                        f.write(new_config)
+                except OSError as e:
+                    raise DynamipsError(f"Could not amend the configuration {self.startup_config_path}: {e}")
 
-        # change the hostname in the private-config
-        if os.path.isfile(self.private_config_path):
-            try:
-                with open(self.private_config_path, "r+", encoding="utf-8", errors="replace") as f:
-                    old_config = f.read()
-                    new_config = old_config.replace(self.name, new_name)
-                    f.seek(0)
-                    f.write(new_config)
-            except OSError as e:
-                raise DynamipsError(f"Could not amend the configuration {self.private_config_path}: {e}")
+            # change the hostname in the private-config
+            if os.path.isfile(self.private_config_path):
+                try:
+                    with open(self.private_config_path, "r+", encoding="utf-8", errors="replace") as f:
+                        old_config = f.read()
+                        new_config = old_config.replace(self.name, new_name)
+                        f.seek(0)
+                        f.write(new_config)
+                except OSError as e:
+                    raise DynamipsError(f"Could not amend the configuration {self.private_config_path}: {e}")
 
         log.debug(f'Router "{self._name}" [{self._id}]: renamed to "{new_name}"')
         self._name = new_name
@@ -1859,11 +1891,14 @@ class Router(KernelDatapathMixin, BaseNode):
         private_config = reply[1][1:-1]  # get private-config and remove single quotes
         return startup_config, private_config
 
+    @lifecycle_action
     async def save_configs(self):
         """
         Saves the startup-config and private-config to files.
         """
 
+        if not native_save_allowed(self):
+            return
         try:
             config_path = os.path.join(self._working_directory, "configs")
             os.makedirs(config_path, exist_ok=True)
@@ -1894,6 +1929,7 @@ class Router(KernelDatapathMixin, BaseNode):
             except (binascii.Error, OSError) as e:
                 raise DynamipsError(f"Could not save the private configuration {config_path}: {e}")
 
+    @lifecycle_action
     async def delete(self):
         """
         Deletes this VM (including all its files).

@@ -37,6 +37,7 @@ import tempfile
 from gns3server.compute.docker.docker_error import DockerError, DockerHttp304Error, DockerHttp404Error
 from gns3server.compute.docker.docker_vm import DockerVM
 from gns3server.compute.nios.nio_bridge import NIOBridge
+from gns3server.services.configurations.shared.node_lease import lifecycle_action
 from gns3server.utils.asyncio import wait_for_file_creation
 from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer
 
@@ -138,6 +139,7 @@ class VendorDockerVM(DockerVM):
                     except ValueError:
                         pass
 
+    @lifecycle_action
     async def create(self):
         # The environment may have changed since __init__ (PUT on the node) —
         # re-parse the knobs so the recreated container picks them up.
@@ -251,7 +253,7 @@ class VendorDockerVM(DockerVM):
             process = await asyncio.subprocess.create_subprocess_exec(
                 "docker",
                 "create",
-                self._image,
+                getattr(self, "_startup_restore_image", None) or self._image,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
@@ -559,6 +561,7 @@ class VendorDockerVM(DockerVM):
         except DockerHttp304Error:
             pass  # already stopped
 
+    @lifecycle_action
     async def start(self):
         await super().start()
         if self.status == "started" and not self._gns3_init:

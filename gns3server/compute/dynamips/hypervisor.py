@@ -110,6 +110,10 @@ class Hypervisor(DynamipsHypervisor):
 
         self._path = path
 
+    @property
+    def binds_console_host(self):
+        return self._bind_console_host
+
     async def start(self):
         """
         Starts the Dynamips hypervisor process.

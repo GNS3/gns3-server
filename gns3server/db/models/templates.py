@@ -217,6 +217,7 @@ class QemuTemplate(Template):
     process_priority = Column(String)
     options = Column(String)
     custom_adapters = Column(JSON)
+    startup_media_profile = Column(String)
 
     __mapper_args__ = {"polymorphic_identity": "qemu", "polymorphic_load": "selectin"}
 

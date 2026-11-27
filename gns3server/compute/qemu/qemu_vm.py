@@ -38,6 +38,14 @@ import psutil
 
 import gns3server
 from gns3server.schemas.compute.qemu_nodes import Qemu, QemuPlatform
+from gns3server.services.configurations.boot_media.qemu_attachment import media_options, required_machine
+from gns3server.services.configurations.boot_media.staging import reconcile_staged
+from gns3server.services.configurations.shared.node_lease import lifecycle_action, while_current_process
+from gns3server.services.configurations.shared.startup_journal import (
+    forget_new_runtime,
+    mark_started,
+    require_launchable,
+)
 from gns3server.utils import parse_version
 from gns3server.utils.asyncio import cancellable_wait_run_in_executor, subprocess_check_output
 from gns3server.utils.kernel_anchor import kernel_anchor_name
@@ -206,6 +214,8 @@ class QemuVM(KernelDatapathMixin, BaseNode):
         self._tpm = False
         self._uefi = False
         self._create_config_disk = False
+        # Native boot media profile (services/configurations/boot_media); None = console restore.
+        self.startup_media_profile = None
         self._on_close = "power_off"
         self._cpu_throttling = 0  # means no CPU throttling
         self._process_priority = "low"
@@ -1172,6 +1182,7 @@ class QemuVM(KernelDatapathMixin, BaseNode):
         await cancellable_wait_run_in_executor(md5sum, self._hdd_disk_image, self.working_dir)
         super().create()
 
+    @lifecycle_action
     async def start(self):
         """
         Starts this QEMU VM.
@@ -1182,6 +1193,9 @@ class QemuVM(KernelDatapathMixin, BaseNode):
                 # resume the VM if it is paused
                 await self.resume()
                 return
+
+            require_launchable(self)
+            reconcile_staged(self)
 
             if self._manager.config.settings.Qemu.enable_monitor:
                 try:
@@ -1219,6 +1233,11 @@ class QemuVM(KernelDatapathMixin, BaseNode):
             # a uBridge process and root-namespace TAPs alive, since nothing
             # else ever reclaims them.
             self._ubridge_tc_caps = None
+            # Boot media is consumed only once the guest runs, so a launch that fails (QEMU
+            # refuses an option, uBridge or NIO wiring fails and the controller retries)
+            # keeps the media for the next attempt. Other nodes consume their preparation
+            # at launch.
+            consume_after_launch = bool(self.startup_media_profile)
             try:
                 await self._start_ubridge()
                 await self._prepare_tap_datapath()
@@ -1231,13 +1250,18 @@ class QemuVM(KernelDatapathMixin, BaseNode):
                 with open(self._stdout_file, "w", encoding="utf-8") as fd:
                     fd.write(f"Start QEMU with {command_string}\n\nExecution log:\n")
                     self.command_line = " ".join(command)
+                    forget_new_runtime(self)
+                    if not consume_after_launch:
+                        mark_started(self)
                     self._process = await asyncio.create_subprocess_exec(
                         *command, stdout=fd, stderr=subprocess.STDOUT, cwd=self.working_dir
                     )
                 log.debug(f'QEMU VM "{self._name}" started PID={self._process.pid}')
                 self._command_line_changed = False
                 self.status = "started"
-                monitor_process(self._process, self._termination_callback)
+                monitor_process(
+                    self._process, while_current_process(self, "_process", self._process, self._termination_callback)
+                )
             except (OSError, subprocess.SubprocessError, UnicodeEncodeError) as e:
                 stdout = self.read_stdout()
                 log.error(f"Could not start QEMU {self.qemu_path}: {e}\n{stdout}")
@@ -1252,26 +1276,32 @@ class QemuVM(KernelDatapathMixin, BaseNode):
                 await self._stop_ubridge()
                 raise
 
-            await self._set_process_priority()
-            if self._cpu_throttling:
-                self._set_cpu_throttling()
-            if "-machine accel=kvm" in command_string:
-                self._hw_virtualization = True
+            try:
+                await self._set_process_priority()
+                if self._cpu_throttling:
+                    self._set_cpu_throttling()
+                if "-machine accel=kvm" in command_string:
+                    self._hw_virtualization = True
 
-            set_link_commands = []
-            for adapter_number, adapter in enumerate(self._ethernet_adapters):
-                nio = adapter.get_nio(0)
-                if nio:
-                    await self._connect_nio(adapter_number, nio)
-                    await self._set_adapter_carrier(adapter_number, not nio.suspend)
-                    if nio.suspend and self._replicate_network_connection_state:
+                set_link_commands = []
+                for adapter_number, adapter in enumerate(self._ethernet_adapters):
+                    nio = adapter.get_nio(0)
+                    if nio:
+                        await self._connect_nio(adapter_number, nio)
+                        await self._set_adapter_carrier(adapter_number, not nio.suspend)
+                        if nio.suspend and self._replicate_network_connection_state:
+                            set_link_commands.append(f"set_link gns3-{adapter_number} off")
+                    elif self._replicate_network_connection_state:
                         set_link_commands.append(f"set_link gns3-{adapter_number} off")
-                elif self._replicate_network_connection_state:
-                    set_link_commands.append(f"set_link gns3-{adapter_number} off")
 
-            if "-loadvm" not in command_string and self._replicate_network_connection_state:
-                # only set the link statuses if not restoring a previous VM state
-                await self._control_vm_commands(set_link_commands)
+                if "-loadvm" not in command_string and self._replicate_network_connection_state:
+                    # only set the link statuses if not restoring a previous VM state
+                    await self._control_vm_commands(set_link_commands)
+            finally:
+                # QEMU runs: a failure in the steps above must not leave the media or prepared disk to be
+                # written again over a guest that has used it.
+                if consume_after_launch and self.is_running():
+                    mark_started(self)
 
         try:
             if self.is_running():
@@ -1322,6 +1352,7 @@ class QemuVM(KernelDatapathMixin, BaseNode):
                     {"message": f"QEMU process has stopped, return code: {returncode}\n{qemu_stdout}"},
                 )
 
+    @lifecycle_action
     async def stop(self):
         """
         Stops this QEMU VM.
@@ -1330,6 +1361,7 @@ class QemuVM(KernelDatapathMixin, BaseNode):
         async with self._execute_lock:
             # stop the QEMU process
             self._hw_virtualization = False
+            survived = False
             try:
                 if self.is_running():
                     log.debug(f'Stopping QEMU VM "{self._name}" PID={self._process.pid}')
@@ -1359,8 +1391,16 @@ class QemuVM(KernelDatapathMixin, BaseNode):
                                 self._process.kill()
                             except ProcessLookupError:
                                 pass
-                            if self._process.returncode is None:
-                                log.warning(f'QEMU VM "{self._name}" PID={self._process.pid} is still running')
+                            try:
+                                await gns3server.utils.asyncio.wait_for_process_termination(self._process, timeout=10)
+                            except ProcessLookupError:
+                                pass
+                            except TimeoutError:
+                                # Keep the handle: the guest may still be writing to its disks.
+                                survived = True
+                                raise QemuError(
+                                    f'QEMU VM "{self._name}" PID={self._process.pid} did not exit after being killed'
+                                )
                 self._process = None
                 self._stop_cpulimit()
                 self._stop_swtpm()
@@ -1386,7 +1426,8 @@ class QemuVM(KernelDatapathMixin, BaseNode):
                 # stop was free to clear underneath it ("dictionary changed
                 # size during iteration"). Serialized, it finds uBridge
                 # already gone and sweeps nothing.
-                await self._stop_ubridge()
+                if not survived:
+                    await self._stop_ubridge()
 
     async def _open_qemu_monitor_connection_vm(self, timeout=10):  # noqa: ASYNC109 - operation-specific timeout is intentional
         """
@@ -1494,6 +1535,7 @@ class QemuVM(KernelDatapathMixin, BaseNode):
                     log.warning(f"Could not write to QEMU monitor: {e}")
             writer.close()
 
+    @lifecycle_action
     async def close(self):
         """
         Closes this QEMU VM.
@@ -1505,7 +1547,13 @@ class QemuVM(KernelDatapathMixin, BaseNode):
         # FIXME: Don't wait for ACPI shutdown when closing the project, should we?
         if self.on_close == "shutdown_signal":
             self.on_close = "power_off"
-        await self.stop()
+        try:
+            await self.stop()
+        except QemuError as e:
+            if not self.is_running():
+                raise
+            # A process that cannot be killed must not abort closing the node.
+            log.error(e)
 
         for adapter in self._ethernet_adapters:
             if adapter is not None:
@@ -1559,6 +1607,7 @@ class QemuVM(KernelDatapathMixin, BaseNode):
             self.status = "stopped"
         return status
 
+    @lifecycle_action
     async def suspend(self):
         """
         Suspends this QEMU VM.
@@ -1575,6 +1624,7 @@ class QemuVM(KernelDatapathMixin, BaseNode):
             else:
                 log.debug(f"QEMU VM is not running to be suspended, current status is {vm_status}")
 
+    @lifecycle_action
     async def reload(self):
         """
         Reloads this QEMU VM.
@@ -1587,6 +1637,7 @@ class QemuVM(KernelDatapathMixin, BaseNode):
             await self._control_vm("system_reset")
         log.debug("QEMU VM has been reset")
 
+    @lifecycle_action
     async def resume(self):
         """
         Resumes this QEMU VM.
@@ -2087,7 +2138,7 @@ class QemuVM(KernelDatapathMixin, BaseNode):
 
     def _uses_pcie_network_layout(self, additional_options=()):
 
-        machine_type = self._machine_type(additional_options)
+        machine_type = self._machine_type(additional_options) or required_machine(self)
         if self.platform in ("i386", "x86_64"):
             machine_type = machine_type or "q35"
             return machine_type == "q35" or machine_type.startswith("pc-q35-")
@@ -2104,7 +2155,7 @@ class QemuVM(KernelDatapathMixin, BaseNode):
             return []
         if self.platform == "aarch64":
             return self._arm64_options(shlex.join(additional_options))
-        return ["-machine", "q35"]
+        return ["-machine", required_machine(self) or "q35"]
 
     def _serial_options(self, internal_console_port, external_console_port):
 
@@ -3045,6 +3096,9 @@ class QemuVM(KernelDatapathMixin, BaseNode):
         command.extend(await self._network_options(self._uses_pcie_network_layout(additional_opt_list)))
         command.extend(self._cdrom_option())
         command.extend(await self._disk_options())
+        # After the node's own disks: virtio disks get their PCI slots in command-line order, and the
+        # first one is what the firmware boots from.
+        command.extend(media_options(self))
         command.extend(self._linux_boot_options())
         if "-uuid" not in additional_options:
             command.extend(["-uuid", self._id])

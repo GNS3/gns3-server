@@ -58,6 +58,7 @@ import re
 import shutil
 
 from gns3server.compute.adapters.ethernet_adapter import EthernetAdapter
+from gns3server.compute.docker.container_state import docker_container
 from gns3server.compute.docker.docker_error import DockerError, DockerHttp404Error
 from gns3server.compute.docker.vendor_docker_vm import VendorDockerVM
 from gns3server.compute.iou.utils.iou_export import nvram_export
@@ -66,6 +67,9 @@ from gns3server.compute.kernel_datapath import KernelDatapathMixin
 from gns3server.compute.nios.nio_bridge import NIOBridge
 from gns3server.compute.ubridge.tc_probe import probe_bridge_tap_support, probe_tap_support
 from gns3server.compute.ubridge.ubridge_error import UbridgeError
+from gns3server.services.configurations.shared.errors import ConfigurationError
+from gns3server.services.configurations.shared.node_lease import lifecycle_action
+from gns3server.services.configurations.shared.startup_journal import native_runtime_owned
 from gns3server.utils.kernel_anchor import kernel_anchor_name
 
 log = logging.getLogger(__name__)
@@ -208,7 +212,16 @@ class IOLDockerVM(VendorDockerVM):
         nvram_file = self._iol_nvram_file()
         os.makedirs(os.path.dirname(nvram_file), exist_ok=True)
         try:
-            nvram = nvram_import(None, content.encode("utf-8"), None, self._IOL_NVRAM_SIZE_KB)
+            private_config = None
+            if os.path.exists(nvram_file):
+                with open(nvram_file, "rb") as existing:
+                    saved = existing.read()
+                try:
+                    _, private_config = nvram_export(saved)
+                except ValueError:
+                    # Never saved or erased: there is no private-config to keep.
+                    private_config = None
+            nvram = nvram_import(None, content.encode("utf-8"), private_config, self._IOL_NVRAM_SIZE_KB)
             with open(nvram_file, "wb") as f:
                 f.write(nvram)
         except (OSError, ValueError) as e:
@@ -233,7 +246,7 @@ class IOLDockerVM(VendorDockerVM):
             if os.path.exists(nvram_file):
                 try:
                     with open(nvram_file, "rb") as f:
-                        startup_config, _ = nvram_export(f.read())
+                        startup_config, private_config = nvram_export(f.read())
                     if startup_config:
                         content = re.sub(
                             r"hostname .+$",
@@ -241,7 +254,7 @@ class IOLDockerVM(VendorDockerVM):
                             startup_config.decode("utf-8", errors="replace"),
                             flags=re.MULTILINE,
                         )
-                        nvram = nvram_import(None, content.encode("utf-8"), None, self._IOL_NVRAM_SIZE_KB)
+                        nvram = nvram_import(None, content.encode("utf-8"), private_config, self._IOL_NVRAM_SIZE_KB)
                         with open(nvram_file, "wb") as f:
                             f.write(nvram)
                 except (OSError, ValueError) as e:
@@ -300,11 +313,13 @@ class IOLDockerVM(VendorDockerVM):
                 volumes.append(needed)
         return volumes
 
+    @lifecycle_action
     async def start(self):
 
         await self._prepare_iol_runtime()
         await super().start()
 
+    @lifecycle_action
     async def restart(self):
         """
         Override: the base restart is a bare ``docker restart`` — the runner
@@ -333,10 +348,32 @@ class IOLDockerVM(VendorDockerVM):
         a live node: the sockets belong to the running runner).
         """
 
-        try:
-            state = await self._get_container_state()
-        except DockerHttp404Error:
-            state = "stopped"
+        owned_runtime = native_runtime_owned(self)
+        if owned_runtime:
+            info = await docker_container(self)
+            if info is None:
+                state = "stopped"
+            else:
+                details = info.get("State", {})
+                if not isinstance(details, dict):
+                    raise ConfigurationError("container_state_unavailable")
+                if details.get("Running") is True or details.get("Paused") is True:
+                    # Do not rewrite runner files or remove sockets on an
+                    # idempotent start/unpause of an existing native runtime.
+                    return
+                if (
+                    details.get("Running") is not False
+                    or details.get("Paused") is not False
+                    or details.get("Restarting", False) is not False
+                    or details.get("Status") not in ("created", "exited", "dead")
+                ):
+                    raise ConfigurationError("container_state_unavailable")
+                state = "stopped"
+        else:
+            try:
+                state = await self._get_container_state()
+            except DockerHttp404Error:
+                state = "stopped"
 
         if self._application_id is None:
             raise DockerError(
@@ -357,7 +394,10 @@ class IOLDockerVM(VendorDockerVM):
         # property setter: at create-payload time the application id may not
         # be final yet (the create route applies fields in schema order) and
         # a running container must not have its NVRAM swapped mid-flight.
-        if self._startup_config_dirty:
+        if owned_runtime:
+            # The staged/saved NVRAM is authoritative after enrollment.
+            self._startup_config_dirty = False
+        elif self._startup_config_dirty:
             self._apply_pending_startup_config()
             self._startup_config_dirty = False
 

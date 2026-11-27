@@ -38,6 +38,7 @@ from . import (
     capabilities,
     cloud_nodes,
     compute,
+    configurations,
     docker_nodes,
     dynamips_nodes,
     ethernet_hub_nodes,
@@ -160,6 +161,9 @@ compute_api.include_router(notifications.router, tags=["Notifications"])
 compute_api.include_router(projects.router, dependencies=[Depends(compute_authentication)], tags=["Projects"])
 
 compute_api.include_router(images.router, dependencies=[Depends(compute_authentication)], tags=["Images"])
+
+compute_api.include_router(configurations.router, tags=["Configurations"])
+compute_api.include_router(configurations.startup_router, tags=["Startup configurations"])
 
 compute_api.include_router(
     atm_switch_nodes.router,

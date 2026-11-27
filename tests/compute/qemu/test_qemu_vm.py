@@ -20,7 +20,7 @@ import os
 import stat
 from pathlib import Path
 from unittest import mock
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 import pytest_asyncio
@@ -29,6 +29,12 @@ from gns3server.compute.notification_manager import NotificationManager
 from gns3server.compute.qemu import Qemu
 from gns3server.compute.qemu.qemu_error import QemuError
 from gns3server.compute.qemu.qemu_vm import QemuVM, host_clocksource
+from gns3server.services.configurations.boot_media.profiles import PROFILES
+from gns3server.services.configurations.boot_media.qemu_attachment import (
+    DISK_MEDIA_FILENAME,
+    ISO_MEDIA_FILENAME,
+    media_filename,
+)
 from gns3server.utils import force_unix_path, int_to_macaddress, macaddress_to_int
 from tests.utils import AsyncioMagicMock, asyncio_patch
 
@@ -170,6 +176,68 @@ async def test_start(vm, running_subprocess_mock):
             assert vm.command_line == " ".join(mock.call_args[0])
 
 
+@pytest.fixture
+def media_journal(vm):
+    """Put a boot media node's runtime journal in a state; the node folder is shared, so remove it afterwards."""
+    from gns3server.services.configurations.shared.startup_journal import journal_path, set_runtime_state
+
+    def prepare(state, profile="cisco-c8000v-autonomous"):
+        vm.startup_media_profile = profile
+        media = Path(vm.working_dir) / media_filename(PROFILES[profile])
+        media.write_bytes(b"staged startup media")
+        set_runtime_state(vm, state)
+
+    yield prepare
+    journal_path(vm).unlink(missing_ok=True)
+    for filename in (ISO_MEDIA_FILENAME, DISK_MEDIA_FILENAME):
+        (Path(vm.working_dir) / filename).unlink(missing_ok=True)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("launch,expected", [("runs", "initialized"), ("fails", "prepared"), ("dies", "prepared")])
+async def test_the_boot_media_is_consumed_only_once_the_guest_runs(
+    vm, running_subprocess_mock, media_journal, launch, expected
+):
+    """A failed launch, or one that dies at once, keeps the media for the retry."""
+    from gns3server.services.configurations.shared.startup_journal import runtime
+
+    media_journal("prepared")
+    process = running_subprocess_mock if launch == "runs" else MagicMock(returncode=1)
+    spawn = {"side_effect": OSError("exec failed")} if launch == "fails" else {"return_value": process}
+    with asyncio_patch("gns3server.compute.qemu.QemuVM.start_wrap_console"):
+        with asyncio_patch("asyncio.create_subprocess_exec", **spawn):
+            if launch == "fails":
+                with pytest.raises(QemuError):
+                    await vm.start()
+            elif launch == "dies":
+                with patch.object(vm, "is_running", return_value=False):
+                    await vm.start()
+            else:
+                await vm.start()
+                assert vm.is_running()
+    assert runtime(vm)["state"] == expected
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("profile", [None, "cisco-c8000v-autonomous"])
+async def test_start_refuses_an_interrupted_preparation_before_starting_helpers(vm, media_journal, profile):
+    from gns3server.services.configurations.shared.errors import ConfigurationError
+
+    media_journal("preparing")
+    vm.startup_media_profile = profile
+    vm.tpm = True
+    with (
+        patch.object(vm, "_start_swtpm", new_callable=AsyncMock) as swtpm,
+        patch.object(vm, "_start_ubridge", new_callable=AsyncMock) as ubridge,
+        asyncio_patch("asyncio.create_subprocess_exec") as spawn,
+    ):
+        with pytest.raises(ConfigurationError, match="configuration_outcome_unknown"):
+            await vm.start()
+    swtpm.assert_not_awaited()
+    ubridge.assert_not_awaited()
+    spawn.assert_not_called()
+
+
 @pytest.mark.asyncio
 async def test_stop(vm, running_subprocess_mock):
 
@@ -188,6 +256,42 @@ async def test_stop(vm, running_subprocess_mock):
             await vm.stop()
             assert vm.is_running() is False
             process.terminate.assert_called_with()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("on_close,graceful", [("power_off", False), ("shutdown_signal", True)])
+async def test_stop_kills_process_when_it_does_not_exit_in_time(vm, running_subprocess_mock, on_close, graceful):
+    vm._process = running_subprocess_mock
+    vm.on_close = on_close
+    # The first wait times out, the wait after kill() sees the exit.
+    wait = AsyncMock(side_effect=[TimeoutError, None])
+    with (
+        patch.object(vm, "_control_vm", new=AsyncMock()),
+        patch("gns3server.utils.asyncio.wait_for_process_termination", new=wait),
+    ):
+        await vm.stop()
+    assert running_subprocess_mock.terminate.called is not graceful
+    running_subprocess_mock.kill.assert_called_once_with()
+    assert wait.await_count == 2
+    assert vm._process is None
+
+
+@pytest.mark.asyncio
+async def test_stop_fails_and_keeps_the_process_when_its_exit_cannot_be_confirmed(vm, running_subprocess_mock):
+    vm._process = running_subprocess_mock
+    vm.status = "started"
+    with (
+        patch("gns3server.utils.asyncio.wait_for_process_termination", new=AsyncMock(side_effect=TimeoutError)),
+        patch.object(vm, "_stop_ubridge", new=AsyncMock()) as stop_ubridge,
+    ):
+        with pytest.raises(QemuError, match="did not exit"):
+            await vm.stop()
+    running_subprocess_mock.kill.assert_called_once_with()
+    # Wipe checks this handle before it erases a disk.
+    assert vm._process is running_subprocess_mock
+    assert vm.status == "started"
+    # The live guest keeps its datapath.
+    stop_ubridge.assert_not_awaited()
 
 
 @pytest.mark.asyncio
@@ -676,6 +780,9 @@ def test_json(vm, compute_project):
     json = vm.asdict()
     assert json["name"] == vm.name
     assert json["project_id"] == compute_project.id
+    assert json["startup_media_profile"] is None
+    vm.startup_media_profile = "cisco-c8000v-autonomous"
+    assert vm.asdict()["startup_media_profile"] == "cisco-c8000v-autonomous"
 
 
 @pytest.mark.asyncio
@@ -1046,6 +1153,27 @@ def test_machine_options_custom_machine_uses_legacy_layout(vm, guest_platform, m
         expected = ["-cpu", "neoverse-n1"] if guest_platform == "aarch64" else []
         assert vm._machine_options(["-machine", machine]) == expected
     assert not vm._uses_pcie_network_layout(["-machine", machine])
+
+
+def test_a_boot_media_profile_can_require_the_pc_machine(vm):
+    """The ASAv boot script only sees its CD-ROM on the pc machine, never on q35."""
+
+    vm._platform = "x86_64"
+    vm.startup_media_profile = "cisco-asav"
+    assert vm._machine_options([]) == ["-machine", "pc"]
+    assert not vm._uses_pcie_network_layout()
+    # A machine the user set explicitly always wins.
+    assert vm._machine_options(["-machine", "q35"]) == []
+    assert vm._uses_pcie_network_layout(["-machine", "q35"])
+
+
+@pytest.mark.parametrize("profile", [None, "", "cisco-viptela", "cisco-c8000v-autonomous"])
+def test_profiles_without_a_machine_requirement_keep_the_default(vm, profile):
+
+    vm._platform = "x86_64"
+    vm.startup_media_profile = profile
+    assert vm._machine_options([]) == ["-machine", "q35"]
+    assert vm._uses_pcie_network_layout()
 
 
 def test_machine_options_arm64(vm):
@@ -1629,3 +1757,64 @@ async def test_sata_cdrom_eject(vm, cdrom_monitor, slot):
     state["blocks"] = f"sata-cdrom{slot}: empty\r\n"
     await vm.update_property("cdrom_image" if slot == 0 else "cdrom2_image", "")
     writer.write.assert_called_with(f"eject -f sata-cdrom{slot}\n".encode())
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "profile,filename,drive_options",
+    [
+        pytest.param(
+            "cisco-c8000v-autonomous",
+            ISO_MEDIA_FILENAME,
+            "if=ide,index=2,media=cdrom,format=raw,readonly=on",
+            id="iso",
+        ),
+        pytest.param(
+            "cisco-iosv",
+            DISK_MEDIA_FILENAME,
+            "if=virtio,index=1,media=disk,format=raw,id=startup-media",
+            id="fat",
+        ),
+    ],
+)
+async def test_startup_media_follows_the_boot_disk_without_changing_boot_order(
+    vm, media_journal, monkeypatch, profile, filename, drive_options
+):
+    from gns3server.services.configurations.shared.startup_journal import mark_started
+
+    # Virtio disks take their PCI slots in command-line order, so the boot disk must come first.
+    boot_disk = "file=/disks/hda_disk.qcow2,if=virtio,index=0,media=disk,id=drive0"
+    monkeypatch.setattr(vm, "_disk_options", AsyncMock(return_value=["-drive", boot_disk]))
+    drive = f"file={Path(vm.working_dir) / filename},{drive_options}"
+    media_journal("clean", profile)
+    assert not any(filename in argument for argument in await vm._build_command())
+    media_journal("prepared", profile)
+    command = await vm._build_command()
+    index = command.index(drive)
+    assert command[index - 1] == "-drive"
+    assert command.index(boot_disk) < index
+    assert command[command.index("-boot") + 1] == "order=c"
+    if filename == DISK_MEDIA_FILENAME:
+        assert not any("media=cdrom" in argument for argument in command)
+    mark_started(vm)
+    assert not any(filename in argument for argument in await vm._build_command())
+
+
+@pytest.mark.asyncio
+async def test_a_boot_media_start_failing_after_the_launch_still_consumes_the_preparation(vm, media_journal):
+    from gns3server.services.configurations.shared.startup_journal import runtime
+
+    media_journal("prepared")
+    process = MagicMock(returncode=None, pid=1234)
+    with (
+        patch.object(vm, "_start_ubridge", new=AsyncMock()),
+        patch.object(vm, "_prepare_tap_datapath", new=AsyncMock()),
+        patch.object(vm, "_build_command", new=AsyncMock(return_value=["qemu"])),
+        patch.object(vm, "_check_requirements", new=AsyncMock(), create=True),
+        patch.object(vm, "_set_process_priority", new=AsyncMock(side_effect=OSError("no cpulimit"))),
+        asyncio_patch("asyncio.create_subprocess_exec", return_value=process),
+    ):
+        with pytest.raises(OSError):
+            await vm.start()
+    assert vm.is_running()
+    assert runtime(vm)["state"] == "initialized"

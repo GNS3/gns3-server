@@ -68,6 +68,7 @@ from . import (
     api_keys,
     appliances,
     computes,
+    configurations,
     controller,
     drawings,
     groups,
@@ -81,6 +82,7 @@ from . import (
     roles,
     settings,
     snapshots,
+    startup_media_profiles,
     symbols,
     templates,
     users,
@@ -116,6 +118,10 @@ router.include_router(projects.distributions_router, prefix="/distributions", ta
 
 router.include_router(nodes.router, prefix="/projects/{project_id}/nodes", tags=["Nodes"])
 
+router.include_router(configurations.router, prefix="/projects/{project_id}", tags=["Configurations"])
+router.include_router(configurations.bulk_router, prefix="/projects/{project_id}", tags=["Configurations"])
+router.include_router(configurations.startup_router, prefix="/projects/{project_id}", tags=["Startup configurations"])
+
 router.include_router(links.router, prefix="/projects/{project_id}/links", tags=["Links"])
 
 router.include_router(drawings.router, prefix="/projects/{project_id}/drawings", tags=["Drawings"])
@@ -131,6 +137,8 @@ router.include_router(
 router.include_router(appliances.router, prefix="/appliances", tags=["Appliances"])
 
 router.include_router(netmiko.router, prefix="/netmiko", tags=["Netmiko"])
+
+router.include_router(startup_media_profiles.router, prefix="/startup-media-profiles", tags=["Startup configurations"])
 
 router.include_router(pools.router, prefix="/pools", tags=["Resource pools"])
 

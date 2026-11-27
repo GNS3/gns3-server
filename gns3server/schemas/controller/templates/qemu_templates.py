@@ -29,6 +29,7 @@ from gns3server.schemas.compute.qemu_nodes import (
     QemuOnCloseAction,
     QemuPlatform,
     QemuProcessPriority,
+    StartupMediaProfile,
 )
 
 from ...update import PartialUpdateModel
@@ -108,6 +109,9 @@ class QemuTemplate(TemplateBase):
     )
     options: Optional[str] = Field("", description="Additional QEMU options")
     custom_adapters: Optional[List[CustomAdapter]] = Field(default_factory=list, description="Custom adapters")
+    startup_media_profile: Optional[StartupMediaProfile] = Field(
+        None, description="Native boot media profile that delivers the startup configuration (none = console restore)"
+    )
 
 
 class QemuTemplateUpdate(PartialUpdateModel, QemuTemplate):

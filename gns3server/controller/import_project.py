@@ -23,10 +23,13 @@ import shutil
 import stat
 import tempfile
 import uuid
+from types import SimpleNamespace
 
 import aiofiles
 
 import gns3server.utils.zipfile_zstd as zipfile_zstd
+from gns3server.services.configurations.sets.selections import remap_nodes
+from gns3server.services.configurations.shared.errors import ConfigurationError
 
 from ..utils.asyncio import aiozipstream, wait_run_in_executor
 from .controller_error import ControllerError
@@ -314,6 +317,12 @@ def regenerate_topology_ids(topology, new_project_path, reset_mac_addresses=Fals
                     # reset the MAC address
                     if prop in ("mac_addr", "mac_address"):
                         node["properties"][prop] = None
+
+    # Configuration sets must follow nodes when a portable project gets new IDs.
+    try:
+        remap_nodes(SimpleNamespace(path=new_project_path), node_old_to_new)
+    except ConfigurationError as error:
+        raise ControllerError(f"Cannot import startup configuration sets: {error.code}") from None
 
     # Generate new link IDs
     for link in topology["topology"]["links"]:

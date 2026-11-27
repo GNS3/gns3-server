@@ -19,6 +19,7 @@ import sqlalchemy as sa
 from alembic import command, config
 from alembic.operations import Operations
 from alembic.runtime.migration import MigrationContext
+from alembic.script import ScriptDirectory
 from fastapi import FastAPI
 
 from gns3server.db.models import Base
@@ -48,9 +49,9 @@ async def test_database_startup_adds_auth_source(tmp_path, monkeypatch, versione
     with engine.connect() as connection:
         Base.metadata.create_all(connection)
         connection.exec_driver_sql("ALTER TABLE users DROP COLUMN auth_source")
+        cfg = config.Config()
+        cfg.set_main_option("script_location", "gns3server:db_migrations")
         if versioned:
-            cfg = config.Config()
-            cfg.set_main_option("script_location", "gns3server:db_migrations")
             cfg.attributes["connection"] = connection
             command.stamp(cfg, migration.down_revision)
         connection.commit()
@@ -63,6 +64,6 @@ async def test_database_startup_adds_auth_source(tmp_path, monkeypatch, versione
             columns = await connection.run_sync(lambda conn: sa.inspect(conn).get_columns("users"))
             assert "auth_source" in {column["name"] for column in columns}
             revision = await connection.scalar(sa.text("SELECT version_num FROM alembic_version"))
-            assert revision == migration.revision
+            assert revision == ScriptDirectory.from_config(cfg).get_current_head()
     finally:
         await app.state._db_engine.dispose()

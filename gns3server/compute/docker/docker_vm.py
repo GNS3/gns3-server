@@ -34,6 +34,8 @@ import psutil
 
 from gns3server.compute.compute_error import ComputeError
 from gns3server.compute.ubridge.ubridge_error import UbridgeNamespaceError
+from gns3server.services.configurations.shared.node_lease import lifecycle_action
+from gns3server.services.configurations.shared.startup_journal import mark_started
 from gns3server.utils import int_to_macaddress, macaddress_to_int
 from gns3server.utils.asyncio import monitor_process, wait_for_file_creation, wait_run_in_executor
 from gns3server.utils.asyncio.raw_command_server import AsyncioRawCommandServer
@@ -421,7 +423,8 @@ class DockerVM(DockerKernelDatapathMixin, BaseNode):
         :returns: Dictionary information about the container image
         """
 
-        result = await self.manager.query("GET", f"images/{self._image}/json")
+        image = getattr(self, "_startup_restore_image", None) or self._image
+        result = await self.manager.query("GET", f"images/{image}/json")
         return result
 
     def _persistent_volume_list(self, image_info, include_network_config=True):
@@ -588,6 +591,7 @@ class DockerVM(DockerKernelDatapathMixin, BaseNode):
         # Give the information to the container on how many interface should be inside
         params["Env"].append(f"GNS3_MAX_ETHERNET=eth{self.adapters - 1}")
 
+    @lifecycle_action
     async def create(self):
         """
         Creates the Docker container.
@@ -638,7 +642,7 @@ class DockerVM(DockerKernelDatapathMixin, BaseNode):
 
         params = {
             "Hostname": self._name,
-            "Image": self._image,
+            "Image": getattr(self, "_startup_restore_image", None) or self._image,
             "NetworkDisabled": True,
             "Tty": True,
             "OpenStdin": True,
@@ -900,6 +904,7 @@ class DockerVM(DockerKernelDatapathMixin, BaseNode):
             )
         return formatted
 
+    @lifecycle_action
     async def update(self):
         """
         Destroy and recreate the container with the new settings
@@ -918,6 +923,7 @@ class DockerVM(DockerKernelDatapathMixin, BaseNode):
         if state == "running":
             await self.start()
 
+    @lifecycle_action
     async def start(self):
         """
         Starts this Docker container.
@@ -959,6 +965,7 @@ class DockerVM(DockerKernelDatapathMixin, BaseNode):
             self._cleanup_console_resources()
             await self._clean_servers()
 
+            mark_started(self)
             await self.manager.query("POST", f"containers/{self._cid}/start")
             await asyncio.sleep(0.5)  # give the Docker container some time to start
             # Fix host-side directory ownership after Docker (re)creates
@@ -1444,11 +1451,13 @@ class DockerVM(DockerKernelDatapathMixin, BaseNode):
 
         return await self._get_container_state() in ("running", "paused")
 
+    @lifecycle_action
     async def restart(self):
         """
         Restart this Docker container.
         """
 
+        mark_started(self)
         await self._stop_interface_monitor()
         await self.manager.query("POST", f"containers/{self._cid}/restart")
         await self._start_interface_monitor()
@@ -1472,6 +1481,7 @@ class DockerVM(DockerKernelDatapathMixin, BaseNode):
                 await telnet_server.wait_closed()
             self._telnet_servers = []
 
+    @lifecycle_action
     async def stop(self, graceful: bool = False):
         """
         Stops this Docker container.
@@ -1546,6 +1556,7 @@ class DockerVM(DockerKernelDatapathMixin, BaseNode):
 
         await self.manager.query("POST", f"containers/{self._cid}/kill")
 
+    @lifecycle_action
     async def pause(self):
         """
         Pauses this Docker container.
@@ -1555,6 +1566,7 @@ class DockerVM(DockerKernelDatapathMixin, BaseNode):
         self.status = "suspended"
         log.debug(f"Docker container '{self._name}' [{self._image}] paused")
 
+    @lifecycle_action
     async def unpause(self):
         """
         Unpauses this Docker container.
@@ -1564,6 +1576,7 @@ class DockerVM(DockerKernelDatapathMixin, BaseNode):
         self.status = "started"
         log.debug(f"Docker container '{self._name}' [{self._image}] unpaused")
 
+    @lifecycle_action
     async def close(self):
         """
         Closes this Docker container.
@@ -1581,6 +1594,7 @@ class DockerVM(DockerKernelDatapathMixin, BaseNode):
         # right after the nodes close.
         await self._reclaim_directory_ownership(self.working_dir)
 
+    @lifecycle_action
     async def reset(self, release_nio_udp_ports=True):
 
         try:
@@ -2151,6 +2165,7 @@ class DockerVM(DockerKernelDatapathMixin, BaseNode):
         result = await self.manager.query("GET", f"containers/{self._cid}/logs", params={"stderr": 1, "stdout": 1})
         return result
 
+    @lifecycle_action
     async def delete(self):
         """
         Deletes the VM (including all its files).

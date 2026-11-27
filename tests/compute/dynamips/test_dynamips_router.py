@@ -14,8 +14,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import os
 import uuid
+from types import SimpleNamespace
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 import pytest_asyncio
@@ -24,6 +27,9 @@ from gns3server.compute.dynamips import Dynamips
 from gns3server.compute.dynamips.dynamips_error import DynamipsError
 from gns3server.compute.dynamips.nodes.router import Router
 from gns3server.config import Config
+from gns3server.schemas.configurations import ConsoleCredentials
+from gns3server.services.configurations.console.session_runner import run_console_session
+from tests.support.configurations import CONFIG, ApplianceTranscript
 
 
 @pytest_asyncio.fixture
@@ -45,6 +51,82 @@ def test_router(compute_project, manager):
     router = Router("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", compute_project, manager)
     assert router.name == "test"
     assert router.id == "00010203-0405-0607-0809-0a0b0c0d0e0f"
+
+
+@pytest.mark.parametrize(
+    "console_host,bound,expected",
+    [
+        ("0.0.0.0", True, "127.0.0.1"),
+        ("::", True, "::1"),
+        ("192.168.1.10", True, "192.168.1.10"),
+        ("192.168.1.10", False, "127.0.0.1"),
+    ],
+)
+def test_the_proxy_connects_where_dynamips_listens(console_host, bound, expected):
+    node = SimpleNamespace(
+        _manager=SimpleNamespace(port_manager=SimpleNamespace(console_host=console_host)),
+        _hypervisor=SimpleNamespace(binds_console_host=bound),
+    )
+    assert Router._internal_console_host(node) == expected
+
+
+@pytest.mark.asyncio
+async def test_console_protocol_changes_preserve_export_proxy(router):
+    router._hypervisor = MagicMock()
+    router._hypervisor.send = AsyncMock(return_value=[])
+    router.get_status = AsyncMock(return_value="inactive")
+    internal = router._internal_console_port
+    assert internal is not None and internal != router.console
+    for protocol in ("ssh", "telnet"):
+        await router.set_console_type(protocol)
+        assert router._wrap_console
+        assert router._internal_console_port == internal
+        router._hypervisor.send.assert_called_with(f'vm set_con_tcp_port "test" {internal}')
+
+
+@pytest.mark.asyncio
+async def test_dynamips_telnet_exports_and_resets_without_reboot(router, monkeypatch):
+    reader = asyncio.StreamReader()
+    transcript = ApplianceTranscript(reader)
+    transcript.close = lambda: None
+    transcript.wait_closed = AsyncMock()
+    original_open = asyncio.open_connection
+
+    async def connect(*args, **kwargs):
+        if kwargs.get("port") == router._internal_console_port:
+            return reader, transcript
+        return await original_open(*args, **kwargs)
+
+    monkeypatch.setattr(asyncio, "open_connection", connect)
+    router.status = "started"
+    router._hypervisor = MagicMock()
+    router._hypervisor.send = AsyncMock()
+    try:
+        await router.start_wrap_console()
+        assert router._configuration_console_proxy is not None
+        # The upstream Telnet negotiation precedes IOS command input.
+        transcript.buffer = b""
+        for _ in range(2):
+            assert await run_console_session(router, ConsoleCredentials(), deadline=10) == CONFIG
+        await router.reset_console()
+        assert router._configuration_console_proxy is not None
+        transcript.buffer = b""
+        assert await run_console_session(router, ConsoleCredentials(), deadline=10) == CONFIG
+        assert router.status == "started"
+        router._hypervisor.send.assert_not_called()
+        assert b"write memory" not in transcript.commands
+        assert b"copy running-config startup-config" not in transcript.commands
+    finally:
+        await router.stop_wrap_console()
+
+
+@pytest.mark.asyncio
+async def test_start_running_router_does_not_duplicate_console_listener(router):
+    router.get_status = AsyncMock(return_value="running")
+    router.start_wrap_console = AsyncMock()
+    router._wrapper_telnet_servers = [MagicMock()]
+    await router.start()
+    router.start_wrap_console.assert_not_called()
 
 
 def test_convert_project_before_2_0_0_b3(compute_project, manager):
@@ -76,3 +158,80 @@ async def test_router_invalid_dynamips_path(compute_project, config, manager):
         await router.create()
         assert router.name == "test"
         assert router.id == "00010203-0405-0607-0809-0a0b0c0d0e0e"
+
+
+@pytest.mark.asyncio
+async def test_managed_router_redundant_stop_keeps_prepared_source(router):
+    from pathlib import Path
+
+    from gns3server.services.configurations.shared.safe_io import write_json
+    from gns3server.services.configurations.shared.startup_journal import journal_path
+
+    Path(router.startup_config_path).write_bytes(b"selected startup")
+    write_json(journal_path(router), {"version": 1, "generation": 1, "state": "prepared"})
+    router.get_status = AsyncMock(return_value="inactive")
+    router.extract_config = AsyncMock()
+    router.stop_wrap_console = AsyncMock()
+    await router.stop()
+    router.extract_config.assert_not_awaited()
+    assert Path(router.startup_config_path).read_bytes() == b"selected startup"
+    journal_path(router).unlink()
+
+
+@pytest.mark.asyncio
+async def test_router_stop_drains_queued_watcher_saves_before_final_extraction(router):
+    from gns3server.services.configurations.shared.node_lease import node_lease
+    from gns3server.services.configurations.shared.safe_io import write_json
+    from gns3server.services.configurations.shared.startup_journal import journal_path
+
+    write_json(journal_path(router), {"version": 1, "generation": 1, "state": "initialized"})
+    router.get_status = AsyncMock(return_value="inactive")
+    router.extract_config = AsyncMock(return_value=(None, None))
+    router.stop_wrap_console = AsyncMock()
+    router._memory_watcher = MagicMock()
+    watcher = router._memory_watcher
+    async with node_lease(router):
+        router._memory_changed("ignored")
+        pending = list(router._configuration_save_tasks)
+        await router.stop()
+    assert all(task.cancelled() for task in pending)
+    assert not router._configuration_save_tasks
+    watcher.close.assert_called_once_with()
+    router.extract_config.assert_awaited_once()
+    journal_path(router).unlink()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("members", [(), ("startup",), ("startup", "private")])
+async def test_managed_router_start_uses_owned_absolute_paths_without_changing_hypervisor_cwd(
+    router, tmp_path, monkeypatch, members
+):
+    from pathlib import Path
+
+    from gns3server.services.configurations.shared.safe_io import write_json
+    from gns3server.services.configurations.shared.startup_journal import journal_path, runtime
+
+    for role, path in (("startup", router.startup_config_path), ("private", router.private_config_path)):
+        if role in members:
+            Path(path).write_bytes(b"selected config")
+        else:
+            Path(path).unlink(missing_ok=True)
+    image = tmp_path / "image.bin"
+    image.write_bytes(b"\x7fELF\x01\x02\x01")
+    router._image = str(image)
+    router._hypervisor = MagicMock()
+    router._hypervisor.send = AsyncMock()
+    router.get_status = AsyncMock(return_value="inactive")
+    router._prepare_tap_datapath = AsyncMock()
+    router.check_available_ram = MagicMock()
+    router.start_wrap_console = AsyncMock()
+    monkeypatch.setattr("gns3server.compute.dynamips.nodes.router.monitor_process", MagicMock())
+    write_json(journal_path(router), {"version": 1, "generation": 1, "state": "prepared"})
+    await router.start()
+    startup = router.startup_config_path if "startup" in members else ""
+    private = router.private_config_path if "private" in members else ""
+    router._hypervisor.send.assert_any_await(f'vm set_config "test" "{startup}" "{private}"')
+    router._hypervisor.set_working_dir.assert_not_called()
+    assert runtime(router)["state"] == "initialized"
+    router._memory_watcher.close()
+    journal_path(router).unlink()

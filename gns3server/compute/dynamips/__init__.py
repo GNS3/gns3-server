@@ -552,12 +552,10 @@ class Dynamips(BaseManager):
         :param settings: VM settings
         """
 
-        startup_config_content = settings.get("startup_config_content")
-        if startup_config_content:
-            self._create_config(vm, vm.startup_config_path, startup_config_content)
-        private_config_content = settings.get("private_config_content")
-        if private_config_content:
-            self._create_config(vm, vm.private_config_path, private_config_content)
+        from gns3server.compute.configurations import ConfigurationService
+        from gns3server.schemas.configurations import Engine
+
+        await ConfigurationService(vm, Engine.dynamips).import_native(settings)
 
     def _create_config(self, vm, path, content=None):
         """

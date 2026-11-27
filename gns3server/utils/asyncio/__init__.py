@@ -21,6 +21,7 @@ import inspect
 import os
 import sys
 import threading
+from weakref import WeakKeyDictionary
 
 
 async def wait_run_in_executor(func, *args, **kwargs):
@@ -179,3 +180,25 @@ async def async_iterable_to_stream(async_iter, limit=65536):
 
     asyncio.ensure_future(_feed())
     return reader
+
+
+# Job classes whose concurrency is bounded per event loop. Tests create a
+# fresh loop per case and the server can replace its loop, so a semaphore is
+# never shared across loops; weak keys let a closed loop's limits be collected.
+CAPACITIES = {
+    "capture": 4,
+    "apply": 4,
+    "console-capture": 4,
+}
+
+_limits: WeakKeyDictionary[asyncio.AbstractEventLoop, dict[str, asyncio.Semaphore]] = WeakKeyDictionary()
+
+
+def loop_limit(name: str) -> asyncio.Semaphore:
+    """Semaphore bounding one class of job on the running event loop."""
+    return _limits.setdefault(asyncio.get_running_loop(), {}).setdefault(name, asyncio.Semaphore(CAPACITIES[name]))
+
+
+def saturated(name: str) -> bool:
+    """True when no free slot exists; used for fail-fast admission."""
+    return loop_limit(name).locked()

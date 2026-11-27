@@ -173,3 +173,7 @@ Quick-start guide for Ubuntu 24.04: install via PPA, set up dependencies, and ru
 ---
 
 _Last updated: 2026-09-01_
+
+## Configuration management
+
+See the [Startup configurations guide](features/startup-configurations.md) for the architecture, API summary, wipe semantics, request limits and troubleshooting.

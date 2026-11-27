@@ -16,9 +16,27 @@
 
 import ipaddress
 from enum import StrEnum
-from typing import Any, Optional
+from typing import Annotated, Any, Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import AfterValidator, BaseModel, Field, field_validator
+
+
+def _known_startup_media_profile(value):
+    """An empty value means console restore; any other value must be a registered profile id."""
+    if not value:
+        return None
+    # Imported lazily: the profile registry must not load with the schemas.
+    from gns3server.services.configurations.boot_media import get_profile
+    from gns3server.services.configurations.shared.errors import ConfigurationError
+
+    try:
+        get_profile(value)
+    except ConfigurationError:
+        raise ValueError("startup_media_profile_unknown") from None
+    return value
+
+
+StartupMediaProfile = Annotated[str, Field(max_length=64), AfterValidator(_known_startup_media_profile)]
 
 
 class ErrorMessage(BaseModel):

@@ -27,6 +27,7 @@ import urllib.parse
 
 log = logging.getLogger()
 
+from types import SimpleNamespace
 from typing import List
 from uuid import UUID
 
@@ -38,6 +39,9 @@ from gns3server import schemas
 from gns3server.compute.error import NodeError
 from gns3server.compute.project import Project
 from gns3server.compute.project_manager import ProjectManager
+from gns3server.services.configurations.shared import preparation
+from gns3server.services.configurations.shared.errors import ConfigurationError
+from gns3server.services.configurations.shared.startup_journal import journal_path, mark_legacy_import
 from gns3server.utils.path import is_safe_path
 
 router = APIRouter()
@@ -387,6 +391,25 @@ async def get_compute_project_file(file_path: str, project: Project = Depends(de
     return FileResponse(path, media_type="application/octet-stream")
 
 
+# The startup files "Import config" writes into an IOU node folder.
+IOU_STARTUP_FILES = ("startup-config.cfg", "private-config.cfg")
+
+
+def note_direct_import(project_path, path):
+    """An imported IOU startup file is pushed to NVRAM at the next start, also after a Wipe or a preparation."""
+    parts = os.path.relpath(path, project_path).split(os.path.sep)
+    if len(parts) != 4 or parts[:2] != ["project-files", "iou"] or parts[3] not in IOU_STARTUP_FILES:
+        return
+    node = SimpleNamespace(working_dir=os.path.dirname(path))
+    try:
+        if journal_path(node).exists():
+            mark_legacy_import(node)
+            preparation.forget(node)
+    except ConfigurationError as error:
+        # An interrupted or unreadable runtime blocks Start anyway.
+        log.warning(f"Imported configuration of '{path}' could not be recorded: {error.code}")
+
+
 @router.post("/projects/{project_id}/files/{file_path:path}", status_code=status.HTTP_204_NO_CONTENT)
 async def write_compute_project_file(file_path: str, request: Request, project: Project = Depends(dep_project)) -> None:
 
@@ -404,6 +427,7 @@ async def write_compute_project_file(file_path: str, request: Request, project: 
         with open(path, "wb+") as f:
             async for chunk in request.stream():
                 f.write(chunk)
+        note_direct_import(project.path, path)
 
     except FileNotFoundError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)

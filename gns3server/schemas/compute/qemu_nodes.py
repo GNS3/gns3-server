@@ -20,7 +20,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from ..common import CustomAdapter, NodeStatus
+from ..common import CustomAdapter, NodeStatus, StartupMediaProfile
 from ..update import PartialUpdateModel
 
 
@@ -221,6 +221,9 @@ class QemuBase(BaseModel):
     process_priority: Optional[QemuProcessPriority] = Field(None, description="Process priority for QEMU")
     options: Optional[str] = Field(None, description="Additional QEMU options")
     custom_adapters: Optional[List[CustomAdapter]] = Field(None, description="Custom adapters")
+    startup_media_profile: Optional[StartupMediaProfile] = Field(
+        None, description="Native boot media profile that delivers the startup configuration (none = console restore)"
+    )
 
 
 class QemuCreate(QemuBase):

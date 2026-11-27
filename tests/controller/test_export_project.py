@@ -19,17 +19,26 @@
 import json
 import os
 import stat
+import tempfile
 import zipfile
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from types import SimpleNamespace
+from unittest.mock import AsyncMock, MagicMock, patch
+from uuid import UUID, uuid4
 
 import pytest
 import pytest_asyncio
 
 from gns3server.controller.controller_error import ControllerError
 from gns3server.controller.export_project import _is_exportable, export_project
+from gns3server.controller.import_project import import_project
 from gns3server.controller.project import Project
+from gns3server.schemas.configurations import Selection
+from gns3server.services.configurations.sets.selections import SelectionStore
+from gns3server.services.configurations.sets.store import StartupStore
+from gns3server.services.configurations.shared.safe_io import read_json, write_json
 from gns3server.utils.asyncio import aiozipstream
+from tests.support.configurations import save_startup
 from tests.utils import AsyncioBytesIO, AsyncioMagicMock
 
 
@@ -68,9 +77,32 @@ def test_exportable_files():
     assert _is_exportable("hello/world")
     assert not _is_exportable("project-files/tmp")
     assert not _is_exportable("project-files/test_log.txt")
+    assert _is_exportable("project-files/startup-configs/configurations.json")
+    assert not _is_exportable("project-files/qemu/abc/.asav-recovery/console.bin")
+    # The staged media and the journal travel together: Start needs the file the journal says is staged.
+    assert _is_exportable("project-files/qemu/abc/startup-media.iso")
+    assert _is_exportable("project-files/qemu/abc/startup-media.img")
     assert not _is_exportable("project-files/test.log")
     assert not _is_exportable("test/project-files/snapshots")
     assert not _is_exportable("test/project-files/snapshots/test.gns3p")
+
+
+@pytest.mark.parametrize(
+    "name,exported",
+    [
+        (".prepare-ab12/flash.raw", False),
+        (".prepare-ab12/nested/partition.img", False),
+        (".disk-copy-x1y2", False),
+        ("hda_disk.qcow2", True),
+        (".startup-runtime.json", True),
+        ("startup-media.iso", True),
+    ],
+)
+@pytest.mark.parametrize("include_snapshots", [False, True])
+def test_preparation_scratch_files_are_never_exported(name, exported, include_snapshots):
+    path = os.path.join("project-files", "qemu", "node-id", *name.split("/"))
+    assert _is_exportable(path, include_snapshots) is exported
+    assert _is_exportable(os.path.join(os.sep, "projects", "p", path), include_snapshots) is exported
 
 
 @pytest.mark.asyncio
@@ -231,6 +263,28 @@ async def test_export_disallow_some_type(tmpdir, project):
     with pytest.raises(ControllerError):
         with aiozipstream.ZipFile() as z:
             await export_project(z, project, str(tmpdir), allow_all_nodes=True)
+
+
+@pytest.mark.asyncio
+async def test_project_export_keeps_set_and_selection_revisions_together(tmpdir, project):
+    store, selections = StartupStore(project), SelectionStore(project)
+    saved, lab = store.create_set("Lab", revision=0)
+    node_id = uuid4()
+    choice = selections.assign(node_id, Selection(kind="set", set_id=lab.id), 0)
+    filename = str(tmpdir / "startup.zip")
+    with aiozipstream.ZipFile() as stream:
+        await export_project(stream, project, str(tmpdir))
+        # The files change before ZipStream begins reading its inputs.
+        pending = saved.model_copy(update={"sets": (saved.sets[0],)})
+        updated = selections.prepare_updates({node_id: Selection()}, choice["revision"])
+        store.write(pending, revision=saved.revision, assignments=updated)
+        await write_file(filename, stream)
+    with zipfile.ZipFile(filename) as exported:
+        for relative, expected in (
+            ("configurations.json", saved.model_dump(mode="json")),
+            ("nodes/selections.json", choice),
+        ):
+            assert json.loads(exported.read(f"project-files/startup-configs/{relative}")) == expected
 
 
 @pytest.mark.asyncio
@@ -459,3 +513,84 @@ async def test_export_two_isos_with_identical_filenames(tmpdir, project):
     await _import_images(controller, str(destination / "images"))
     assert (imported_images / "QEMU" / properties["cdrom_image"]).read_bytes() == b"installer"
     assert (imported_images / "QEMU" / properties["cdrom2_image"]).read_bytes() == b"drivers"
+
+
+@pytest_asyncio.fixture
+async def persisted_project(controller):
+    return await controller.add_project(name="Test")
+
+
+async def _seed_startup_project(project, controller):
+    compute = MagicMock()
+    compute.id = "local"
+    response = SimpleNamespace(json={"console": 2048})
+    compute.post = AsyncMock(return_value=response)
+    compute.get = AsyncMock(return_value=response)
+    compute.delete = AsyncMock(return_value=response)
+    compute.put = AsyncMock(return_value=response)
+    controller._computes["local"] = compute
+    node = await project.add_node(compute, "Router", str(uuid4()), node_type="iou", properties={})
+    assignments = SelectionStore(project)
+    store = StartupStore(project)
+    save_startup(store, node.id, "cisco_ios_telnet", "hostname SavedRouter\r\n")
+    assignments.assign(node.id, Selection(kind="set", set_id=store.read().selected), 0)
+    write_json(assignments.root / "managed" / f"{node.id}.json", {"managed": True})
+    journal = Path(project.path) / "project-files" / "iou" / node.id / ".startup-runtime.json"
+    write_json(journal, {"version": 1, "generation": 2, "state": "initialized"})
+    project.dump()
+    return node, journal
+
+
+def _assert_startup_project_saved(project, node_id):
+    store = StartupStore(project)
+    entry = store.read().sets[0].nodes[UUID(node_id)]
+    assert entry.enabled and entry.content == "hostname SavedRouter\r\n"
+    assignments = SelectionStore(project)
+    assert assignments.selections()["nodes"] == {node_id: {"kind": "set", "set_id": str(store.read().selected)}}
+    assert read_json(assignments.root / "managed" / f"{node_id}.json") == {"managed": True}
+    journal = Path(project.path) / "project-files" / "iou" / node_id / ".startup-runtime.json"
+    assert read_json(journal)["generation"] == 2
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("method", ["portable", "duplicate"])
+async def test_project_roundtrip_remaps_sets_assignment_and_journal(persisted_project, controller, tmp_path, method):
+    project = persisted_project
+    node, journal = await _seed_startup_project(project, controller)
+    original_journal = journal.read_bytes()
+    if method == "duplicate":
+        copied = await project.duplicate(name="Copy")
+    else:
+        archive = tmp_path / "project.zip"
+        with tempfile.TemporaryDirectory(dir=tmp_path) as temporary, aiozipstream.ZipFile() as stream:
+            await export_project(stream, project, temporary)
+            await write_file(archive, stream)
+        with archive.open("rb") as stream:
+            copied = await import_project(controller, str(uuid4()), stream, name="Imported", keep_compute_ids=True)
+    topology = json.loads((Path(copied.path) / copied._filename).read_bytes())
+    new_id = topology["topology"]["nodes"][0]["node_id"]
+    assert new_id != node.id and copied.id != project.id
+    _assert_startup_project_saved(copied, new_id)
+    root = SelectionStore(copied).root
+    assert not (root / "managed" / f"{node.id}.json").exists()
+    assert not (Path(copied.path) / "project-files" / "iou" / node.id).exists()
+    # Portability never edits the original project's assignment or recovery data.
+    assert journal.read_bytes() == original_journal
+
+
+@pytest.mark.asyncio
+async def test_actual_snapshot_restore_restores_assignment_and_runtime_without_start(persisted_project, controller):
+    project = persisted_project
+    node, journal = await _seed_startup_project(project, controller)
+    snapshot = await project.snapshot("saved-startup-state")
+    assignments = SelectionStore(project)
+    assignments.assign(node.id, Selection(kind="none"), 1)
+    write_json(journal, {"version": 1, "generation": 9, "state": "clean"})
+    store = StartupStore(project)
+    save_startup(store, node.id, "cisco_ios_telnet", "hostname Changed\n", enabled=False)
+    controller._notification = MagicMock()
+    restored = await snapshot.restore()
+    assert restored.id == project.id and list(restored.nodes) == [node.id]
+    _assert_startup_project_saved(restored, node.id)
+    compute = controller._computes["local"]
+    assert all(not call.args[0].endswith("/start") for call in compute.post.call_args_list)

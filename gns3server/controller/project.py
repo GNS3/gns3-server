@@ -270,6 +270,11 @@ class Project:
         """
         Called when open/close a project. Cleanup internal stuff
         """
+        startup_state = getattr(self, "_startup_configuration_state", None)
+        if startup_state is not None:
+            for task in startup_state["tasks"].values():
+                task.cancel()
+            del self._startup_configuration_state
         self._allocated_node_names = set()
         self._nodes = {}
         self._links = {}

@@ -39,6 +39,13 @@ import gns3server.utils.asyncio
 import gns3server.utils.images
 from gns3server.compute.ubridge.tc_probe import probe_iol_tap_support
 from gns3server.compute.ubridge.ubridge_error import UbridgeError
+from gns3server.services.configurations.shared import preparation
+from gns3server.services.configurations.shared.node_lease import lifecycle_action, while_current_process
+from gns3server.services.configurations.shared.startup_journal import (
+    mark_started,
+    native_runtime_owned,
+    native_save_allowed,
+)
 from gns3server.utils.asyncio import locking
 from gns3server.utils.asyncio.ssh_server import AsyncioSSHServer
 from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer
@@ -209,6 +216,7 @@ class IOUVM(KernelDatapathMixin, BaseNode):
         self.save_configs()
         self.updated()
 
+    @lifecycle_action
     async def close(self):
         """
         Closes this IOU VM.
@@ -483,7 +491,8 @@ class IOUVM(KernelDatapathMixin, BaseNode):
         if self.startup_config_file:
             content = self.startup_config_content
             content = re.sub(r"hostname .+$", "hostname " + new_name, content, flags=re.MULTILINE)
-            self.startup_config_content = content
+            with preparation.keeping_ownership(self):
+                self.startup_config_content = content
 
         super(IOUVM, IOUVM).name.__set__(self, new_name)
 
@@ -663,12 +672,14 @@ class IOUVM(KernelDatapathMixin, BaseNode):
             except OSError as e:
                 raise IOUError(f"Cannot write nvram file {nvram_file}: {e}")
 
+    @lifecycle_action
     async def start(self):
         """
         Starts the IOU process.
         """
 
         await self._check_requirements()
+        owned_runtime = native_runtime_owned(self)
         if not self.is_running():
             await self._library_check()
 
@@ -698,7 +709,8 @@ class IOUVM(KernelDatapathMixin, BaseNode):
                 if self.use_default_iou_values:
                     # make sure we have the default nvram amount to correctly push the configs
                     await self.update_default_iou_values()
-                self._push_configs_to_nvram()
+                if not owned_runtime:
+                    self._push_configs_to_nvram()
 
                 # check if there is enough RAM to run
                 self.check_available_ram(self.ram)
@@ -736,6 +748,7 @@ class IOUVM(KernelDatapathMixin, BaseNode):
                     else:
                         log.debug(f"Starting IOU: {command}")
                     self.command_line = " ".join(command)
+                    mark_started(self)
                     self._iou_process = await asyncio.create_subprocess_exec(
                         *self._loader,
                         *command,
@@ -749,7 +762,10 @@ class IOUVM(KernelDatapathMixin, BaseNode):
                     self._started = True
                     self.status = "started"
                     callback = functools.partial(self._termination_callback, "IOU")
-                    gns3server.utils.asyncio.monitor_process(self._iou_process, callback)
+                    gns3server.utils.asyncio.monitor_process(
+                        self._iou_process,
+                        while_current_process(self, "_iou_process", self._iou_process, callback),
+                    )
                 except FileNotFoundError as e:
                     self._stop_l1_keepalive_responder()
                     raise IOUError(
@@ -789,6 +805,7 @@ class IOUVM(KernelDatapathMixin, BaseNode):
                 error_prefix = "SSH"
             try:
                 self._telnet_server = await server.start(self._manager.port_manager.console_host, self.console)
+                self._configuration_console_proxy = server
             except OSError as e:
                 await self.stop()
                 raise IOUError(
@@ -1014,6 +1031,7 @@ class IOUVM(KernelDatapathMixin, BaseNode):
         for file_path in glob.glob(os.path.join(glob.escape(self.working_dir), "vlan.dat-*")):
             shutil.move(file_path, destination)
 
+    @lifecycle_action
     async def stop(self):
         """
         Stops the IOU process.
@@ -1068,6 +1086,7 @@ class IOUVM(KernelDatapathMixin, BaseNode):
         self._started = False
         self.status = "stopped"
 
+    @lifecycle_action
     async def reload(self):
         """
         Reloads the IOU process (stop & start).
@@ -1784,6 +1803,8 @@ class IOUVM(KernelDatapathMixin, BaseNode):
         Saves the startup-config and private-config to files.
         """
 
+        if not native_save_allowed(self):
+            return
         if self.startup_config_content or self.private_config_content:
             startup_config_content, private_config_content = self.extract_configs()
             if startup_config_content:
